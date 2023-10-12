@@ -6,11 +6,13 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import sys 
 
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn import tree
+
 
 # Local imports
 from helpers import outliers_IQR, outliers_z_score,  handle_outliers, fix_obesity
@@ -25,7 +27,21 @@ np.random.seed(2023)
 # ######## 2. DATA ANALYSIS AND PROCESSING ########
 # #################################################
 
-diabetes = pd.read_csv('diabetes.csv')
+try:
+    infile = sys.argv[1] # reac command line argument
+except IndexError:
+    # default file is diabetes.csv
+    infile = 'diabetes.csv'
+
+
+try:
+    diabetes = pd.read_csv(infile)
+
+# Handle imporper filenames
+except FileNotFoundError: 
+    print(f'\n\nERROR: file {infile} was not found')
+    quit()
+
 
 binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
                    'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
