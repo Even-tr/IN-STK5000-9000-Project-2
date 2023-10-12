@@ -3,7 +3,6 @@ warnings.simplefilter('always', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
-import dataframe_image as dfi
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,82 +42,6 @@ one_hot_features = {} # for future use
 """
 # Code used for answering questions in this section
 """
-
-print('\nINITIAL DATA ANALYSIS')
-# number of entries
-print("Rows: ", diabetes.shape[0], ", Columns:", diabetes.shape[1])
-print("---------------------------------------------------")
-
-# What type of values do you have?
-diabetes.info()
-print("---------------------------------------------------")
-
-# Duplicates
-print("Number of duplicates:", diabetes[diabetes.duplicated(keep=False)].shape[0]/2)
-print("---------------------------------------------------")
-
-"""
-# ### Interesting findings - Bias in the data set
-# There are some interesting things to see in the categoricals ...
-# Only one Black in entire data set ...
-# This looks very much like a rich person data set ...
-"""
-print('\nHighlight bias in dataset - skewed proportion in Race and Occupation')
-for c in ['Race', 'Occupation']:
-  print(diabetes.groupby(c, dropna=False).size())
-
-# Race
-#https://en.wikipedia.org/wiki/United_States
-demo_race = pd.Series([.62, .12, .06, 2], index=['White', 'Black', 'Asian', 'Mixed/Other'])
-diabetes_race = pd.DataFrame(diabetes.groupby('Race').size(), columns = ['Dataset'])/diabetes.shape[0]
-diabetes_race = diabetes_race.join(pd.DataFrame(demo_race, columns = ['Population']))
-diabetes_race.plot.bar()
-plt.title("Race")
-plt.savefig("images/diabetes_race.png")
-
-# Gender
-grouped = diabetes.groupby(['Gender', 'Diabetes']).size().unstack(fill_value=0)
-ax = grouped.plot(kind='bar', stacked=True, figsize=(8, 6), color=['blue', 'red'])
-ax.set_xlabel('Gender')
-ax.set_ylabel('Count')
-ax.set_title('Diabetes Count by Gender')
-plt.xticks(rotation=0)
-plt.legend(title='Diabetes', loc='upper right', labels=['Negative', 'Positive'])
-plt.title("Gender-diabetes")
-plt.savefig("images/diabetes_gender-diabetes.png")
-
-# Income
-income_classes = [0, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275]
-pop_income = pd.DataFrame(pd.Series([0.1, 0.2, 0.3, 0.2, 0.15, 0.05, 0, 0, 0, 0, 0, 0], index=income_classes), columns = ['Population'])
-ds_income = pd.DataFrame(pd.Series([0, 0, 0, 0.12, 0.2, 0.22, 0.22, 0.16, 0.08, 0, 0, 0], index=income_classes), columns = ['Dataset'])
-ds_income = ds_income.join(pop_income) 
-ds_income.plot.bar()
-plt.title("Income")
-plt.savefig("images/diabetes_income.png")
-
-# #####################################
-# ######## MISSING DATA PART 1 ########
-# #####################################
-
-print('\nMISSING DATA')
-
-missing_data_stats = pd.DataFrame(diabetes.isna().sum().sort_values(ascending=False), columns=['Count'])
-missing_data_stats2 = pd.DataFrame(diabetes.isna().mean().sort_values(ascending=False)*100, columns=['Percentage'])
-missing_data_stats = missing_data_stats.join(missing_data_stats2)
-
-print("Percentage of missing data:", diabetes.isna().mean().mean())
-print("Samples with at least one missing value:", len(diabetes[diabetes.isnull().any(axis=1)]))
-
-# How many values are the samples missing
-nomis = diabetes[diabetes.isna().sum(axis=1) == 1].shape[0]
-print(f"Percentage of samples with 1 missing values: {nomis/len(diabetes)}")
-nomis = diabetes[diabetes.isna().sum(axis=1) > 1].shape[0]
-print(f"Percentage of samples with 2 or more missing values: {nomis/len(diabetes)}")
-
-try:
-    dfi.export(missing_data_stats.round({'Count': 0, 'Percentage': 2}), 'images/missing_data.png')
-except OSError:
-    pass
 
 # ### Data Cleaning
 # #### Uniform formatting
@@ -165,11 +88,6 @@ assert len(diabetes.index) == len(train.index) + len(test.index)
 # ######## OUTLIERS ########
 # ##########################
 
-# ### Univariate
-try:
-    dfi.export(train[num_features].describe().loc[['min','max']], 'images/outliers_1.png')
-except OSError:
-    pass
 
 # #### Identify Boundaries
 
@@ -186,51 +104,21 @@ for f in ['Temperature', 'Urination']:
     l_Z, u_Z = outliers_z_score(train, f)
     train_outlier_bounds.loc[f] = [max(min(l_IQR, l_Z),0), max(u_IQR, u_Z)]
 
-try:
-    dfi.export(train_outlier_bounds.round(2), 'images/outliers_bounds.png')
-except OSError:
-    pass
 
-# box plots for Age and Urination
-for f in ['Age', 'Urination']:
-    plt.clf()
-    bp = train.boxplot(f)
-    bp.plot()
-    plt.savefig('images/bp_'+f+'.png') 
-
-# #### Deal with
+### Deal with
 
 train = handle_outliers(train, train_outlier_bounds)
 test = handle_outliers(test, train_outlier_bounds)
 
-# How does it look now? All min max values sensible ...
-try:
-    dfi.export(train[num_features].describe().loc[['min','max']], 'images/outliers_minmax_2.png') 
-except OSError:
-    pass
-
+# How does it look now? All min max values sensible ..
 # Box plots after handling
-for f in ['Age', 'Urination']:
-    plt.clf()
-    bp = train.boxplot(f)
-    bp.plot()
-    plt.savefig('images/bp_'+f+'_after.png') 
 
 # ### Combined outliers
 # Combined outliers must be handled after fixing the individual ones, otherwise the same ones would be discovered
 
 zs_train = combined_outliers(train[num_features], num_features)
 
-plt.clf()
-plt.figure()
-plt.scatter(range(0, len(zs_train)), sorted(zs_train))
-plt.savefig('images/combined_scatter.png') 
-plt.clf()
 
-try:
-    dfi.export(train[zs_train > 3][['Age', 'Gender', 'Race', 'Occupation', 'Height', 'Weight', 'Urination', 'Temperature']], 'images/combined_outlier.png')
-except OSError:
-    pass
 
 # #### Handle
 train = train[zs_train < 4]
@@ -305,36 +193,6 @@ test['BMI'] = BMI(test['Weight'],  test['Height'])
 
 assert len(train.index) > 10
 
-# ##############################
-# ######## CORRELATIONS ########
-# ##############################
-print('\nCORRELATIONS')
-
-corr = train.corr(numeric_only=True)
-
-# look at the smallest and largest in absolute value
-corrs = corr.stack().loc[lambda x : (x < 1)].abs().sort_values()
-print("Smallest:")
-print(corrs[:20])
-print("-------------------------------")
-print("Largest:")
-print(corrs[-20:])
-
-cmap = 'coolwarm' # Added colour map as a variable for consistent plot style
-plot_pearsonsr_column_wise(train[num_features + ['BMI']],kwargs={'cmap' : cmap, 'center':0}, outfile='images/cont_cont_corr.png')
-# reverse color as low p-value indicates strong dependence
-plot_chi_square_p_values(train[binary_features  + cat_features +  ['Diabetes']], kwargs={'cmap' : matplotlib.colormaps[cmap +'_r']}, outfile = 'images/cat_cat_corr.png')
-plot_point_biserial_correlation(train, cont=num_features + ['BMI'], cat=binary_features + ['Diabetes'], kwargs={'cmap' : cmap}, outfile = 'images/cont_cat_corr_bmi.png')
-
-#  We see that weight and obesity is strongly correlated, however BMI and obesity is not. Furthermore, diabetes has no correlation with either of them. This does not mean that BMI or weight are bad predictors, since the relationship between them could be non-linear. 
-#  Urination is indeed very correlated, which is apparent in the later plots.
-
-# ###################################
-# ######## FEATURE SELECTION ########
-# ###################################
-print('\nFEATURE SELECTION')
-print("Temperature has low variance. Coefficient of variation = stdev/mean =", np.std(train['Temperature'])/np.mean(train['Temperature']))
-
 # Some sanity checks
 assert train.isna().sum().sum() == 0, 'No Na-s should be present after handling. They must have been introduced'
 
@@ -343,11 +201,6 @@ selected_features.remove('Urination')
 selected_features.remove('Temperature')
 selected_features.remove('Obesity')
 selected_features.remove('TCep')
-
-print(f'\nSelected Features')
-print(selected_features)
-
-# ## Training model
 
 X_train = train[selected_features]
 y_train = train['Diabetes']
@@ -362,14 +215,10 @@ for index in X_train.dtypes.keys():
     assert dtype == 'float64' or dtype == 'int64' or dtype == 'uint8', f"feature '{index}' is not of type float or int but {dtype}"
 
 
-print('Number of rows:', len(X_train.index))
-print('Number of features:', len(X_train.columns))
-print(X_train.columns)
 
 # ###################################
 # ######## DECISION TREE ############
 # ###################################
-print('\nDECISION TREE')
 
 clf = tree.DecisionTreeClassifier(max_depth=7)
 clf_full_tree = clf.fit(X_train, y_train)
@@ -378,32 +227,10 @@ y_test_pred = clf_full_tree.predict(X_test)
 
 confusion_mat = metrics.confusion_matrix(y_test, y_test_pred)
 con_mat_disp = ConfusionMatrixDisplay(confusion_mat, display_labels=clf.classes_)
-con_mat_disp.plot()
-plt.clf()
+
 
 # ### Some Pruning
 # Code borrowed from https://www.kaggle.com/code/arunmohan003/pruning-decision-trees-tutorial
-
-path = clf_full_tree.cost_complexity_pruning_path(X_train, y_train)
-ccp_alphas, impurities = path.ccp_alphas, path.impurities
-# For each alpha we will append our model to a list
-clfs = []
-for ccp_alpha in ccp_alphas:
-    clf_tmp = tree.DecisionTreeClassifier(random_state=0, ccp_alpha=ccp_alpha)
-    clf_tmp.fit(X_train, y_train)
-    clfs.append(clf_tmp)
-
-clfs = clfs[:-1]
-ccp_alphas = ccp_alphas[:-1]
-node_counts = [clf.tree_.node_count for clf in clfs]
-depth = [clf.tree_.max_depth for clf in clfs]
-plt.scatter(ccp_alphas, node_counts)
-plt.scatter(ccp_alphas, depth)
-plt.plot(ccp_alphas, node_counts,label='no of nodes', drawstyle="steps-post")
-plt.plot(ccp_alphas, depth,label='depth', drawstyle="steps-post")
-plt.legend()
-plt.savefig('images/pruned_tree_complexity.png')
-
 
 # Alpha 0.02 seems like a good trade off between size and complexity
 # as indicated by pruned_tree_complexity.png
@@ -419,6 +246,4 @@ print('Pruned tree')
 #print(f'Train score {accuracy_score(y_train_pred,y_train)}')
 print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test)}')
 
-plt.figure(figsize=(20, 20))
 tree.plot_tree(clf_pruned_tree, feature_names=selected_features, class_names=classes, filled=True)
-plt.savefig('images/pruned_tree.png')
