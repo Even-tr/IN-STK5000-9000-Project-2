@@ -3,10 +3,11 @@ warnings.simplefilter('always', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import sys 
+import datetime
+import time
 
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
@@ -16,12 +17,14 @@ from sklearn import tree
 
 # Local imports
 from helpers import outliers_IQR, outliers_z_score,  handle_outliers, fix_obesity
-from helpers import combined_outliers
-from helpers import BMI, fix_polydipsia 
+from helpers import combined_outliers, BMI, fix_polydipsia 
 
 # Reproducibility
 np.random.seed(2023)
 
+
+print(f'Experiment ran {datetime.date.today()}')
+start_time = time.time()
 
 # #################################################
 # ######## 2. DATA ANALYSIS AND PROCESSING ########
@@ -41,6 +44,8 @@ try:
 except FileNotFoundError: 
     print(f'\n\nERROR: file {infile} was not found')
     quit()
+
+print(f'With file {infile}')
 
 
 binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
@@ -261,5 +266,6 @@ print('RESULTS')
 print('Pruned tree')
 #print(f'Train score {accuracy_score(y_train_pred,y_train)}')
 print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test)}')
+print(f'\nFinished in {time.time() - start_time:.2f} seconds')
 
 tree.plot_tree(clf_pruned_tree, feature_names=selected_features, class_names=classes, filled=True)
