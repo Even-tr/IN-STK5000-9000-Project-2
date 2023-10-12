@@ -14,7 +14,7 @@ from sklearn import tree
 
 # Local imports
 from helpers import outliers_IQR, outliers_z_score,  handle_outliers, fix_obesity
-from helpers import combined_outliers, plot_pearsonsr_column_wise, plot_chi_square_p_values, plot_point_biserial_correlation
+from helpers import combined_outliers
 from helpers import BMI, fix_polydipsia 
 
 # Reproducibility
