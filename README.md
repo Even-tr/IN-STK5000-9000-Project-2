@@ -3,6 +3,7 @@
 https://docs.google.com/presentation/d/1U_PAywkxoO0AGcN5XDDShKzrxjGgmvw63qKXIF6WFFY/edit?usp=sharing
 
 ## Liten todo som slettes v innlevering 
+## hva som skal gjøres i koden nå: 
 ### cleaning: 
 - Normalisation
  - convert binary and categorical features to lower case 
@@ -18,6 +19,8 @@ https://docs.google.com/presentation/d/1U_PAywkxoO0AGcN5XDDShKzrxjGgmvw63qKXIF6W
 - Cross validation for Alfa. 
 
 ### Metrics: acc, prec, rec, f1 (si noe om privacy også ) 
+
+## bootstrapping eller cross-v: rapportering på range 
 
 # IN-STK5000-9000-Project-2
 
