@@ -23,5 +23,3 @@ https://docs.google.com/presentation/d/1U_PAywkxoO0AGcN5XDDShKzrxjGgmvw63qKXIF6W
 ## bootstrapping eller cross-v: rapportering på range 
 
 # IN-STK5000-9000-Project-2
-
-# IN-STK5000-9000-Project-2
