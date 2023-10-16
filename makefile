@@ -1,6 +1,8 @@
 
 all:
+	rm output.txt
 	python script.py diabetes.csv >> output.txt
+	cat output.txt
 
 run:
 	rm output.txt
