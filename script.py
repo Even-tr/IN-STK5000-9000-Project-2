@@ -5,7 +5,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import sys 
 import datetime
 import time
 
@@ -13,259 +12,312 @@ from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn import tree
+import random
 
+from argparse import ArgumentParser
+import os
 
 # Local imports
 from helpers import outliers_IQR, outliers_z_score,  handle_outliers, fix_obesity
 from helpers import combined_outliers, BMI, fix_polydipsia 
 
-# Reproducibility
-np.random.seed(2023)
+# Set random seed for reproducibility
 
 
-print(f'Experiment ran {datetime.date.today()}')
-start_time = time.time()
+def seed_everything(seed_value=1704):
+    """
+    Sets seeds for os, numpy, PyTorch and Cuda
+    """
+    os.environ['PYTHONHASHSEED'] = str(seed_value) # set PYTHONHASHSEED env var at fixed value
+    random.seed(seed_value) # set fixed seed for python random
+    np.random.seed(seed_value) # set fixed seed for numpy
 
-# #################################################
-# ######## 2. DATA ANALYSIS AND PROCESSING ########
-# #################################################
 
-try:
-    infile = sys.argv[1] # reac command line argument
-except IndexError:
-    # default file is diabetes.csv
-    infile = 'diabetes.csv'
 
+def data_cleaning(dataframe): 
+    binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
+                    'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
+                    'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia']
+    cat_features = ['Race',	'Occupation',	'GP']
+    num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
+    one_hot_features = {} # for future use
 
-try:
-    diabetes = pd.read_csv(infile)
+    # Converts all binary features to lower case
+    for f in binary_features:
+        dataframe[f] = dataframe[f].str.lower()
 
-# Handle imporper filenames
-except FileNotFoundError: 
-    print(f'\n\nERROR: file {infile} was not found')
-    quit()
+    # Converts all binary features to ints, preserving Na-s
+    dataframe = dataframe.replace({'yes':1, 'no':0}) 
+    dataframe = dataframe.replace({'Positive':1, 'Negative':0})
 
-print(f'With file {infile}')
+    # #### Duplicates
 
+    # We delete them. We assume they are caused by an error in the data collection, and it's unlikely that there are two correct instances with the exact same values.  
+    dataframe = dataframe.drop_duplicates(keep='first')
 
-binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
-                   'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
-                   'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia']
-cat_features = ['Race',	'Occupation',	'GP']
-num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
-one_hot_features = {} # for future use
+    # #### Meters to centimeters
+    condition = dataframe['Height'] < 100
+    dataframe.loc[condition, ['Height']] = dataframe.loc[condition, ['Height']].mul(100)
 
+    # #### Dropping females and Non-Whites
+    # Note missing values will also be dropped
+    dataframe = dataframe[dataframe['Gender'] == 'Male']
+    dataframe = dataframe[dataframe['Race'] == 'White']
 
-# #######################################
-# ######## INITIAL DATA ANALYSIS ########
-# #######################################
 
-"""
-# Code used for answering questions in this section
-"""
+    # ### Missing categorical data
+    # If we don't fill missing categorical data now, we run the risk that either the train or the test set don't contain any NA-s. This can cause a difference in columns after one hot encoding and lead to a crash.
+    # we want to fill early s.t. there are no Na-s beyond this point
+    dataframe[cat_features + ['Gender']] = dataframe[cat_features+ ['Gender']].fillna('MISSING')
 
-# ### Data Cleaning
-# #### Uniform formatting
+    return dataframe
 
-# Converts all binary features to lower case
-for f in binary_features:
-   diabetes[f] = diabetes[f].str.lower()
 
-# Converts all binary features to ints, preserving Na-s
-diabetes = diabetes.replace({'yes':1, 'no':0}) 
-diabetes = diabetes.replace({'Positive':1, 'Negative':0})
+def outliers(train, test, num_features):
+    # #### Identify Boundaries
 
-# #### Duplicates
+    """
+    Skrive litt mer om hvilke verdier vi har valgt her
+    outlier_bounds: kanskje automatisere ? 
+    statistical IQR vs z-score: høyeste på maks og laveste på min. skriv inn komementar   
 
-# We delete them. We assume they are caused by an error in the data collection, and it's unlikely that there are two correct instances with the exact same values.  
-diabetes = diabetes.drop_duplicates(keep='first')
+    """
 
-# #### Meters to centimeters
-condition = diabetes['Height'] < 100
-diabetes.loc[condition, ['Height']] = diabetes.loc[condition, ['Height']].mul(100)
+    # Init with domain knowledge
 
-# #### Dropping females and Non-Whites
-# Note missing values will also be dropped
-diabetes = diabetes[diabetes['Gender'] == 'Male']
-diabetes = diabetes[diabetes['Race'] == 'White']
+    train_outlier_bounds = pd.DataFrame(
+        {'Lower': [16, 110, 30, np.nan, np.nan], # age: 16, height: 110, weight: 30
+        'Upper': [120, 240, 200, np.nan, np.nan]}, # age, height, weight
+        index=num_features
+    )
 
+    # Statistical IQR and Z-score
+    for f in ['Temperature', 'Urination']:
+        l_IQR, u_IQR = outliers_IQR(train, f)
+        l_Z, u_Z = outliers_z_score(train, f)
+        train_outlier_bounds.loc[f] = [max(min(l_IQR, l_Z),0), max(u_IQR, u_Z)]
+ 
+    # remove the identified outliers to missing values
+    train = handle_outliers(train, train_outlier_bounds)    
+    test = handle_outliers(test, train_outlier_bounds)
 
-# ### Missing categorical data
-# If we don't fill missing categorical data now, we run the risk that either the train or the test set don't contain any NA-s. This can cause a difference in columns after one hot encoding and lead to a crash.
-# we want to fill early s.t. there are no Na-s beyond this point
-diabetes[cat_features + ['Gender']] = diabetes[cat_features+ ['Gender']].fillna('MISSING')
+    # ### Combined outliers
+    # Combined outliers must be handled after fixing the individual ones, otherwise the same ones would be discovered
+    zs_train = combined_outliers(train[num_features], num_features)
+    # #### Handle   
+    train = train[zs_train < 4] 
+    zs_test = combined_outliers(test, num_features, test.copy())
+    test = test[zs_test < 4]
+    
 
-# ## Train - Test split
-# We split as early as possible to avoid cross contamination of information from the test set.
-# ### Splitting
+    return train, test
 
-train_proportion = 0.8
-train_idx = np.random.choice(diabetes.index, int(train_proportion*len(diabetes.index)), replace=False)
-train = diabetes.loc[train_idx]
-test = diabetes.drop(train_idx)
-assert len(diabetes.index) == len(train.index) + len(test.index)
 
-# ##########################
-# ######## OUTLIERS ########
-# ##########################
 
+def handle_missing_data(train, test):
+    #Derived Features
+    # skrive litt om hvorfor vi har valgt disse her
+    train = fix_obesity(train)
+    test = fix_obesity(test)
 
-# #### Identify Boundaries
+    train = fix_polydipsia(train)
+    test = fix_polydipsia(test)
 
-# Init with domain knowledge
-train_outlier_bounds = pd.DataFrame(
-    {'Lower': [16, 110, 30, np.nan, np.nan],
-     'Upper': [120, 240, 200, np.nan, np.nan]},
-     index=num_features
-)
+    #Missing Binaries
+    train[binary_features] = train[binary_features].fillna(0) # set to false 
+    test[binary_features] = test[binary_features].fillna(0) # set to false 
 
-# Statistical
-for f in ['Temperature', 'Urination']:
-    l_IQR, u_IQR = outliers_IQR(train, f)
-    l_Z, u_Z = outliers_z_score(train, f)
-    train_outlier_bounds.loc[f] = [max(min(l_IQR, l_Z),0), max(u_IQR, u_Z)]
+    #Missing numeric
 
+    # Fill Na-s with mean. 
+    train[num_features] = train[num_features].fillna(train[num_features].mean())
+    # We fill the test data with the mean of the train data, making the test set indepentent of each others
+    test[num_features] = test[num_features].fillna(train[num_features].mean())
 
-### Deal with
+    # Testing for remaining Na-s
+    assert train.isna().sum().sum() == 0, f'train data still containts {train.isna().sum().sum()} Na-s'
+    assert test.isna().sum().sum() == 0, f'test data still containts {test.isna().sum().sum()} Na-s'
+    return train, test
 
-train = handle_outliers(train, train_outlier_bounds)
-test = handle_outliers(test, train_outlier_bounds)
 
-# How does it look now? All min max values sensible ..
-# Box plots after handling
+def normalise(train, test): 
+    gender_dummies_train = pd.get_dummies(train['Gender'], prefix='gender')
+    train = train.join(gender_dummies_train)
 
-# ### Combined outliers
-# Combined outliers must be handled after fixing the individual ones, otherwise the same ones would be discovered
+    gender_dummies_test = pd.get_dummies(test['Gender'], prefix='gender')
 
-zs_train = combined_outliers(train[num_features], num_features)
+    test = test.join(gender_dummies_test)
 
+    one_hot_features['Gender'] = list(set(list(gender_dummies_train.columns) + list(gender_dummies_test.columns)))
 
+    # Add one hot variable column to train/test if it exists for one, but not the other adn fill with 0
+    for i in list(gender_dummies_train):
+        if i not in gender_dummies_test:
+            test[i] = 0
 
-# #### Handle
-train = train[zs_train < 4]
-zs_test = combined_outliers(test, num_features, test.copy())
-test = test[zs_test < 4]
+    for i in list(gender_dummies_test):
+        if i not in gender_dummies_train:
+            train[i] = 0
 
-# #####################################
-# ######## MISSING DATA PART 2 ########
-# #####################################
+    def checkEqualColumns(L1, L2):
+        return len(L1) == len(L2) and sorted(L1) == sorted(L2)
 
-# ### Deal with
+    assert checkEqualColumns(train.columns, test.columns), f'train and test set doesent have the same features'
 
-# #### Derived Features
+    for i in zip(sorted(train.columns), sorted(test.columns)):
+        assert i[0] == i[1], 'Train and test columns do not match'
 
-train = fix_obesity(train)
-test = fix_obesity(test)
 
-train = fix_polydipsia(train)
-test = fix_polydipsia(test)
+    train['BMI'] = BMI(train['Weight'],  train['Height'])
+    test['BMI'] = BMI(test['Weight'],  test['Height'])
 
-# #### Missing Binaries
 
-train[binary_features] = train[binary_features].fillna(0)
-test[binary_features] = test[binary_features].fillna(0)
+    assert len(train.index) > 10
 
-# #### Missing numeric
+    # Some sanity checks
+    assert train.isna().sum().sum() == 0, 'No Na-s should be present after handling. They must have been introduced'
 
-# Fill Na-s with mean. 
-train[num_features] = train[num_features].fillna(train[num_features].mean())
-# We fill the test data with the mean of the train data, making the test set indepentent of each others
-test[num_features] = test[num_features].fillna(train[num_features].mean())
+    return train, test
 
-# #### Testing for remaining Na-s
 
-assert train.isna().sum().sum() == 0, f'train data still containts {train.isna().sum().sum()} Na-s'
-assert test.isna().sum().sum() == 0, f'test data still containts {test.isna().sum().sum()} Na-s'
+if __name__ == "__main__": 
+        
+    
+    parser = ArgumentParser()
+    parser.add_argument("--description", action="store", type=str, default="Project-2")
+    parser.add_argument("--infile", action="store", type=str, default='diabetes.csv')
+    parser.add_argument("--seed", action="store", type=int, default=2023)
+    parser.add_argument("--outfile", action="store", type=str, default='outfile.txt') 
+    parser.add_argument("--remove-features", action="store", type=str, default='none')
+    args = parser.parse_args()
 
-# Henceforth, we may assume both train and test data contains no Na-s, drastically simplifying the rest of the code. For online learning, we should perhaps implement the code in this section as a function so that we can apply it on new cases continuously.
+    print("\nDescription :",args.description, "\n")
 
-# ## Encoding
+    # writing essential info to terminal / outfile"
+    print("\n\n==========================================================\n")
+    print(str(datetime.datetime.now()))
+    print("\n\nArgs: \n")
+    for arg in vars(args):
+        print(' {} {}'.format(arg, getattr(args, arg) or ''))
+    
+    # set all kinds of seeds for reproducibility
+    seed_everything(args.seed)
 
-gender_dummies_train = pd.get_dummies(train['Gender'], prefix='gender')
-train = train.join(gender_dummies_train)
+    #open and write to file
+    outfile = open(args.outfile, 'a')
+    outfile.write("\n\n==========================================================\n")
+    outfile.write(str(datetime.datetime.now()))
+    start_time = time.time()
 
-gender_dummies_test = pd.get_dummies(test['Gender'], prefix='gender')
 
-test = test.join(gender_dummies_test)
+    try:
+        infile = args.infile # reac command line argument
 
-one_hot_features['Gender'] = list(set(list(gender_dummies_train.columns) + list(gender_dummies_test.columns)))
+    except IndexError:
+        # default file is diabetes.csv
+        infile = 'diabetes.csv'
 
-# Add one hot variable column to train/test if it exists for one, but not the other adn fill with 0
-for i in list(gender_dummies_train):
-    if i not in gender_dummies_test:
-        test[i] = 0
+    try:
+        diabetes = pd.read_csv(infile)
 
-for i in list(gender_dummies_test):
-    if i not in gender_dummies_train:
-        train[i] = 0
+    # Handle imporper filenames
+    except FileNotFoundError: 
+        print(f'\n\nERROR: file {infile} was not found')
+        quit()
 
-def checkEqualColumns(L1, L2):
-    return len(L1) == len(L2) and sorted(L1) == sorted(L2)
+    outfile.write(str(infile))
+    print(f'Reading: {infile}')
 
-assert checkEqualColumns(train.columns, test.columns), f'train and test set doesent have the same features'
 
-for i in zip(sorted(train.columns), sorted(test.columns)):
-    assert i[0] == i[1], 'Train and test columns do not match'
+    binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
+                    'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
+                    'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia']
+    cat_features = ['Race',	'Occupation',	'GP']
+    num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
+    one_hot_features = {} # for future use
 
 
-train['BMI'] = BMI(train['Weight'],  train['Height'])
-test['BMI'] = BMI(test['Weight'],  test['Height'])
+    # ######## INITIAL DATA ANALYSIS ########
 
 
-assert len(train.index) > 10
+    """
+    # Code used for answering questions in this section
+    """
 
-# Some sanity checks
-assert train.isna().sum().sum() == 0, 'No Na-s should be present after handling. They must have been introduced'
+    # ### Data Cleaning
 
-selected_features = num_features + binary_features 
-selected_features.remove('Urination')
-selected_features.remove('Temperature')
-selected_features.remove('Obesity')
-selected_features.remove('TCep')
+    clean_diabetes = data_cleaning(diabetes)
 
-X_train = train[selected_features]
-y_train = train['Diabetes']
+    #Train - Test split
+    train_proportion = 0.8
+    train_idx = np.random.choice(clean_diabetes.index, int(train_proportion*len(clean_diabetes.index)), replace=False)
+    train = clean_diabetes.loc[train_idx]
 
-# Test set
-X_test = test[selected_features]
-y_test = test['Diabetes']
+    test = clean_diabetes.drop(train_idx)
+    assert len(clean_diabetes.index) == len(train.index) + len(test.index)
 
+    #Outliers 
+    train, test = outliers(train, test, num_features)
 
-for index in X_train.dtypes.keys():
-    dtype = X_train.dtypes[index]
-    assert dtype == 'float64' or dtype == 'int64' or dtype == 'uint8', f"feature '{index}' is not of type float or int but {dtype}"
+    #Missing data
+     
+    train, test = handle_missing_data(train, test)
+    
 
+    # Henceforth, neither train nor test data contains Na-s, 
 
+    #Normalise data 
+    train, test = normalise(train, test)
 
-# ###################################
-# ######## DECISION TREE ############
-# ###################################
 
-clf = tree.DecisionTreeClassifier(max_depth=7)
-clf_full_tree = clf.fit(X_train, y_train)
+    #Encoding
+    selected_features = num_features + binary_features 
+    selected_features.remove('Urination')
+    selected_features.remove('Temperature')
+    selected_features.remove('Obesity')
+    selected_features.remove('TCep')
 
-y_test_pred = clf_full_tree.predict(X_test)
+    X_train = train[selected_features]
+    y_train = train['Diabetes']
 
-confusion_mat = metrics.confusion_matrix(y_test, y_test_pred)
-con_mat_disp = ConfusionMatrixDisplay(confusion_mat, display_labels=clf.classes_)
+    # Test set
+    X_test = test[selected_features]
+    y_test = test['Diabetes']
 
 
-# ### Some Pruning
-# Code borrowed from https://www.kaggle.com/code/arunmohan003/pruning-decision-trees-tutorial
+    for index in X_train.dtypes.keys():
+        dtype = X_train.dtypes[index]
+        assert dtype == 'float64' or dtype == 'int64' or dtype == 'uint8', f"feature '{index}' is not of type float or int but {dtype}"
 
-# Alpha 0.02 seems like a good trade off between size and complexity
-# as indicated by pruned_tree_complexity.png
-alpha = 0.02
-classes = ['Negative', 'Positive']
-clf_pruned_tree = tree.DecisionTreeClassifier(random_state=0, ccp_alpha=alpha)
-clf_pruned_tree.fit(X_train,y_train)
-y_train_pred = clf_pruned_tree.predict(X_train)
-y_test_pred = clf_pruned_tree.predict(X_test)
 
-print('RESULTS')
-print('Pruned tree')
-#print(f'Train score {accuracy_score(y_train_pred,y_train)}')
-print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test)}')
-print(f'\nFinished in {time.time() - start_time:.2f} seconds')
 
-tree.plot_tree(clf_pruned_tree, feature_names=selected_features, class_names=classes, filled=True)
+    #Model training
+
+    clf = tree.DecisionTreeClassifier(max_depth=7)
+    clf_full_tree = clf.fit(X_train, y_train)
+
+    y_test_pred = clf_full_tree.predict(X_test)
+
+    confusion_mat = metrics.confusion_matrix(y_test, y_test_pred)
+    con_mat_disp = ConfusionMatrixDisplay(confusion_mat, display_labels=clf.classes_)
+
+
+    # ### Some Pruning
+    # Code borrowed from https://www.kaggle.com/code/arunmohan003/pruning-decision-trees-tutorial
+
+    # Alpha 0.02 seems like a good trade off between size and complexity
+    # as indicated by pruned_tree_complexity.png
+    alpha = 0.02
+    classes = ['Negative', 'Positive']
+    clf_pruned_tree = tree.DecisionTreeClassifier(random_state=0, ccp_alpha=alpha)
+    clf_pruned_tree.fit(X_train,y_train)
+    y_train_pred = clf_pruned_tree.predict(X_train)
+    y_test_pred = clf_pruned_tree.predict(X_test)
+
+    print('RESULTS')
+    print('Pruned tree')
+    #print(f'Train score {accuracy_score(y_train_pred,y_train)}')
+    print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test)}')
+    print(f'\nFinished in {time.time() - start_time:.2f} seconds')
+
+    tree.plot_tree(clf_pruned_tree, feature_names=selected_features, class_names=classes, filled=True)
