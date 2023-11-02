@@ -11,3 +11,5 @@ else
 	python script.py --infile='diabetes.csv' >> output.txt
 endif
 	cat output.txt
+
+	
