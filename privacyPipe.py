@@ -27,7 +27,7 @@ def randomize_binary(a, theta):
     Accepts a vector of binary values and add randomized noise, parameterized by theta = probability of answering truthfully.
     """
     coins = np.random.choice([True, False], p=(theta, (1-theta)), size=a.shape)
-    noise = np.random.choice(['no', 'yes'], size=a.shape)
+    noise = np.random.choice(['no', 'yes', 'No', 'Yes'], size=a.shape)
     response = np.array(a)
     response[~coins] = noise[~coins]
     return response
