@@ -34,7 +34,7 @@ except IndexError:
     infile = "diabetes.csv"
     print(f"Default arguments used: {infile}")
 
-
+np.random.seed(2023)
 
 def BMI(weight, height):
     return weight/(height**2/(100*100))
@@ -416,5 +416,3 @@ for feature in feature_importance.keys():
     plt.title(feature)
     plt.xlim([-0.01,0.6])
     plt.show()
-
-

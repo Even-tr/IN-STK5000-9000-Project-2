@@ -16,6 +16,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 import sys
 
+np.random.seed(2023)
+
+
 try:
     infile = sys.argv[1]
     outfile = sys.argv[2]
@@ -174,5 +177,3 @@ test_equal()
 
 # %%
 out_data = anonymize_data(infile, theta, outfile=outfile)
-
-
