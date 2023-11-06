@@ -1,6 +1,8 @@
-
+# %% [markdown]
 # # Simple pipeline to add differential privacy to a data set
+# 
 
+# %%
 import warnings
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -12,15 +14,30 @@ import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
+import sys
+
+try:
+    infile = sys.argv[1]
+    outfile = sys.argv[2]
+    theta = float(sys.argv[3])
+except IndexError:
+    infile = "diabetes.csv"
+    outfile = "anon.csv"
+    theta = 0.95
+    print(f"Default arguments used: {infile}, {outfile}, {theta}")
 
 
-_binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
+# %%
+binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
                 'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
                 'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia', 'Gender']
-_cat_features = ['Race',	'Occupation',	'GP']
-_num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
+cat_features = ['Race',	'Occupation',	'GP']
+num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
 
-_target = 'Diabetes'
+
+target = 'Diabetes'
+
+# %%
 
 def randomize_binary(a, theta):
     """
@@ -61,8 +78,13 @@ def calculate_epsilon(theta):
 
     Se biased_coin_privacy.md for details.
     """
+
     return np.log( (theta +(1-theta)*0.5)/(((1-theta)*0.5)))
 
+assert calculate_epsilon(0.5) == np.log(3) # result from lecture notes
+
+
+# %%
 def make_privacy_pipeline(theta):   
     """
     Takes a probability for answering truthfully and creates a pipeline which adds
@@ -90,11 +112,13 @@ def make_privacy_pipeline(theta):
         ]
     )
 
+
+    # General preprocesser which encodes and scales all features
     preprocessor = ColumnTransformer(
         transformers=[
-            ("num", num_transformer, _num_features),
-            ("cat", cat_transformer, _cat_features),
-            ('binary', binary_transformer, _binary_features)
+            ("num", num_transformer, num_features),
+            ("cat", cat_transformer, cat_features),
+            ('binary', binary_transformer, binary_features)
         ],
         verbose_feature_names_out= True,
         remainder='drop'                # drop untouched features since after this step, as it is the last preprocessing one
@@ -102,28 +126,22 @@ def make_privacy_pipeline(theta):
     
     return preprocessor
 
+# %%
 def anonymize_data(infile, theta, outfile = None):
-    """
-    Reads an infile and adds column wise differential privacy with theta probability of telling the truth.
-
-    Target column, diabetes, is not randomized. TODO: shall we randomize it?
-
-    Optionally, it also saves the data frame in the outfile location.
-    """
 
     # read data
     indata = pd.read_csv(infile)
-    y = indata[_target]
-    X = indata.drop(columns=(_target))
+    y = indata[target]
+    X = indata.drop(columns=(target))
 
     # make pipeline
     preprocessor = make_privacy_pipeline(theta=theta)
 
-    # run pipelein
+    # run pipeline
     out_data = preprocessor.fit_transform(X,y)
 
     # reformat to same match infile
-    out_data.columns = _num_features + _cat_features + _binary_features
+    out_data.columns = num_features + cat_features + binary_features
     out_data['Gender'] = out_data['Gender'].replace({'yes':'Male', 'no':'Female', 'Yes':'Male', 'No':'Female'}) 
     out_data['Diabetes'] = y
     out_data = out_data.reindex(columns=indata.columns)
@@ -134,19 +152,27 @@ def anonymize_data(infile, theta, outfile = None):
 
     return out_data
 
-if __name__ == '__main__':
-    assert calculate_epsilon(0.5) == np.log(3) # result from lecture notes
-
+# %%
+def test_random():
+    out_data = anonymize_data('diabetes.csv', 0.95)
     diabetes = pd.read_csv('diabetes.csv')
-
-    # with probability of telling the truth equal to one, there should be no anonymization
-    pd.testing.assert_frame_equal(diabetes, anonymize_data('diabetes.csv', 1), check_dtype=False)
-
-    # with only a slight probability of not answering truthfully, there should be some anonymization
-    # Note: there is a probability greater than zero that this test fails even when it works as expected
     try:
-        pd.testing.assert_frame_equal(diabetes, anonymize_data('diabetes.csv', 0.99), check_dtype=False)
+        pd.testing.assert_frame_equal(diabetes, out_data, check_dtype=False)
     except AssertionError:
         pass
     else:
-        raise AssertionError
+        raise AssertionError # "data not randomized"
+    
+
+def test_equal():
+    out_data = anonymize_data('diabetes.csv', 1)
+    diabetes = pd.read_csv('diabetes.csv')
+    pd.testing.assert_frame_equal(diabetes, out_data, check_dtype=False)
+
+test_random()
+test_equal()
+
+# %%
+out_data = anonymize_data(infile, theta, outfile=outfile)
+
+

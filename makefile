@@ -13,11 +13,11 @@ endif
 	cat output.txt
 
 normal:
-	python ./pipe.py diabetes.csv
+	python ./pipeline.py diabetes.csv
 	
 anon:
-	python ./privacy.py diabetes.cvs anon.cvs
-	python ./pipe.py anon.csv
+	python ./privacyPipe.py diabetes.csv anon.csv 0.95
+	python ./pipeline.py anon.csv
 
 
 analysis:
