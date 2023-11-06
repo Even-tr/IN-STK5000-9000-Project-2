@@ -96,7 +96,7 @@ def outliers(train, test, num_features):
         train_outlier_bounds.loc[f] = [max(min(l_IQR, l_Z),0), max(u_IQR, u_Z)]
  
     # remove the identified outliers to missing values
-    train = handle_outliers(train, train_outlier_bounds)    
+    train = handle_outliers(train, train_outlier_bounds)
     test = handle_outliers(test, train_outlier_bounds)
 
     # Combined outliers
@@ -107,7 +107,6 @@ def outliers(train, test, num_features):
     zs_test = combined_outliers(test, num_features, test.copy())
     test = test[zs_test < 4]
     
-
     return train, test
 
 
