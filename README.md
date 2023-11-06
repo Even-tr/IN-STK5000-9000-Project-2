@@ -2,6 +2,11 @@
 ```bash
 pip install -r requirements.txt
 ```
+or create environment:
+```bash
+conda env create -f environment.yml
+```
+
 
 
 # LENKER SOM SLETTES VED INNLEVERING 
