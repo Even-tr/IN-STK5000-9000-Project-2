@@ -12,4 +12,14 @@ else
 endif
 	cat output.txt
 
+normal:
+	python ./pipe.py diabetes.csv
 	
+anon:
+	python ./privacy.py diabetes.cvs anon.cvs
+	python ./pipe.py anon.csv
+
+
+analysis:
+	make normal
+	make anon
