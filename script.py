@@ -10,7 +10,6 @@ import time
 
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
-from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn import tree
 import random
 
@@ -50,22 +49,22 @@ def data_cleaning(dataframe):
     dataframe = dataframe.replace({'yes':1, 'no':0}) 
     dataframe = dataframe.replace({'Positive':1, 'Negative':0})
 
-    # #### Duplicates
+    # Duplicates
 
     # We delete them. We assume they are caused by an error in the data collection, and it's unlikely that there are two correct instances with the exact same values.  
     dataframe = dataframe.drop_duplicates(keep='first')
 
-    # #### Meters to centimeters
+    # Meters to centimeters
     condition = dataframe['Height'] < 100
     dataframe.loc[condition, ['Height']] = dataframe.loc[condition, ['Height']].mul(100)
 
-    # #### Dropping females and Non-Whites
+    # Dropping females and Non-Whites
     # Note missing values will also be dropped
     dataframe = dataframe[dataframe['Gender'] == 'Male']
     dataframe = dataframe[dataframe['Race'] == 'White']
 
 
-    # ### Missing categorical data
+    # Missing categorical data
     # If we don't fill missing categorical data now, we run the risk that either the train or the test set don't contain any NA-s. This can cause a difference in columns after one hot encoding and lead to a crash.
     # we want to fill early s.t. there are no Na-s beyond this point
     dataframe[cat_features + ['Gender']] = dataframe[cat_features+ ['Gender']].fillna('MISSING')
@@ -74,7 +73,7 @@ def data_cleaning(dataframe):
 
 
 def outliers(train, test, num_features):
-    # #### Identify Boundaries
+    # Identify Boundaries
 
     """
     Skrive litt mer om hvilke verdier vi har valgt her
@@ -101,10 +100,10 @@ def outliers(train, test, num_features):
     train = handle_outliers(train, train_outlier_bounds)    
     test = handle_outliers(test, train_outlier_bounds)
 
-    # ### Combined outliers
+    # Combined outliers
     # Combined outliers must be handled after fixing the individual ones, otherwise the same ones would be discovered
     zs_train = combined_outliers(train[num_features], num_features)
-    # #### Handle   
+    # Handle   
     train = train[zs_train < 4] 
     zs_test = combined_outliers(test, num_features, test.copy())
     test = test[zs_test < 4]
@@ -115,7 +114,7 @@ def outliers(train, test, num_features):
 
 
 def handle_missing_data(train, test):
-    #Derived Features
+    # Derived Features
     # skrive litt om hvorfor vi har valgt disse her
     train = fix_obesity(train)
     test = fix_obesity(test)
@@ -123,12 +122,11 @@ def handle_missing_data(train, test):
     train = fix_polydipsia(train)
     test = fix_polydipsia(test)
 
-    #Missing Binaries
+    # Missing Binaries
     train[binary_features] = train[binary_features].fillna(0) # set to false 
     test[binary_features] = test[binary_features].fillna(0) # set to false 
 
-    #Missing numeric
-
+    # Missing numeric
     # Fill Na-s with mean. 
     train[num_features] = train[num_features].fillna(train[num_features].mean())
     # We fill the test data with the mean of the train data, making the test set indepentent of each others
@@ -188,7 +186,7 @@ if __name__ == "__main__":
     parser.add_argument("--infile", action="store", type=str, default='diabetes.csv')
     parser.add_argument("--seed", action="store", type=int, default=2023)
     parser.add_argument("--outfile", action="store", type=str, default='outfile.txt') 
-    parser.add_argument("--remove-features", action="store", type=str, default='none')
+    parser.add_argument("--remove-features", action="store", type=str, default='none') # Not used will be removed
     args = parser.parse_args()
 
     print("\nDescription :",args.description, "\n")
@@ -238,17 +236,15 @@ if __name__ == "__main__":
 
 
     # ######## INITIAL DATA ANALYSIS ########
-
-
     """
     # Code used for answering questions in this section
     """
 
-    # ### Data Cleaning
+    # Data Cleaning
 
     clean_diabetes = data_cleaning(diabetes)
 
-    #Train - Test split
+    # Train - Test split
     train_proportion = 0.8
     train_idx = np.random.choice(clean_diabetes.index, int(train_proportion*len(clean_diabetes.index)), replace=False)
     train = clean_diabetes.loc[train_idx]
@@ -256,21 +252,18 @@ if __name__ == "__main__":
     test = clean_diabetes.drop(train_idx)
     assert len(clean_diabetes.index) == len(train.index) + len(test.index)
 
-    #Outliers 
+    # Handle Outliers 
     train, test = outliers(train, test, num_features)
 
-    #Missing data
-     
+    # Handle Missing data 
     train, test = handle_missing_data(train, test)
     
 
-    # Henceforth, neither train nor test data contains Na-s, 
-
-    #Normalise data 
+    # Normalise data 
     train, test = normalise(train, test)
 
 
-    #Encoding
+    # Feature selection
     selected_features = num_features + binary_features 
     selected_features.remove('Urination')
     selected_features.remove('Temperature')
@@ -289,20 +282,14 @@ if __name__ == "__main__":
         dtype = X_train.dtypes[index]
         assert dtype == 'float64' or dtype == 'int64' or dtype == 'uint8', f"feature '{index}' is not of type float or int but {dtype}"
 
-
-
     #Model training
-
     clf = tree.DecisionTreeClassifier(max_depth=7)
     clf_full_tree = clf.fit(X_train, y_train)
 
+    # predict
     y_test_pred = clf_full_tree.predict(X_test)
 
-    confusion_mat = metrics.confusion_matrix(y_test, y_test_pred)
-    con_mat_disp = ConfusionMatrixDisplay(confusion_mat, display_labels=clf.classes_)
-
-
-    # ### Some Pruning
+   #Some Pruning
     # Code borrowed from https://www.kaggle.com/code/arunmohan003/pruning-decision-trees-tutorial
 
     # Alpha 0.02 seems like a good trade off between size and complexity
