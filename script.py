@@ -3,12 +3,10 @@ warnings.simplefilter('always', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 import time
 
-from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn import tree
 import random
@@ -20,12 +18,10 @@ import os
 from helpers import outliers_IQR, outliers_z_score,  handle_outliers, fix_obesity
 from helpers import combined_outliers, BMI, fix_polydipsia 
 
-# Set random seed for reproducibility
-
-
 def seed_everything(seed_value=1704):
     """
-    Sets seeds for os, numpy, PyTorch and Cuda
+    Set random seed for reproducibility
+    Sets seeds for os, numpy
     """
     os.environ['PYTHONHASHSEED'] = str(seed_value) # set PYTHONHASHSEED env var at fixed value
     random.seed(seed_value) # set fixed seed for python random
@@ -65,7 +61,8 @@ def data_cleaning(dataframe):
 
 
     # Missing categorical data
-    # If we don't fill missing categorical data now, we run the risk that either the train or the test set don't contain any NA-s. This can cause a difference in columns after one hot encoding and lead to a crash.
+    # If we don't fill missing categorical data now, we run the risk that either the train or the test set don't contain any NA-s.
+    # This can cause a difference in columns after one hot encoding and lead to a crash.
     # we want to fill early s.t. there are no Na-s beyond this point
     dataframe[cat_features + ['Gender']] = dataframe[cat_features+ ['Gender']].fillna('MISSING')
 
@@ -73,17 +70,19 @@ def data_cleaning(dataframe):
 
 
 def outliers(train, test, num_features):
+    """
+    Identify bounds for what is an outlier.
+    by:
+    - domain knowledge
+    - statistical methods:
+        - Z score
+        - IQR (with: level 1.5)
+        - Most conservative (in reespect to not deem something an outlier chosen) 
+    """
+
     # Identify Boundaries
 
-    """
-    Skrive litt mer om hvilke verdier vi har valgt her
-    outlier_bounds: kanskje automatisere ? 
-    statistical IQR vs z-score: høyeste på maks og laveste på min. skriv inn komementar   
-
-    """
-
     # Init with domain knowledge
-
     train_outlier_bounds = pd.DataFrame(
         {'Lower': [16, 110, 30, np.nan, np.nan], # age: 16, height: 110, weight: 30
         'Upper': [120, 240, 200, np.nan, np.nan]}, # age, height, weight
@@ -101,7 +100,7 @@ def outliers(train, test, num_features):
     test = handle_outliers(test, train_outlier_bounds)
 
     # Combined outliers
-    # Combined outliers must be handled after fixing the individual ones, otherwise the same ones would be discovered
+    # ;ust be handled after fixing the individual ones, otherwise the same ones would be discovered
     zs_train = combined_outliers(train[num_features], num_features)
     # Handle   
     train = train[zs_train < 4] 
@@ -114,6 +113,9 @@ def outliers(train, test, num_features):
 
 
 def handle_missing_data(train, test):
+    """
+    Handle missing data
+    """
     # Derived Features
     # skrive litt om hvorfor vi har valgt disse her
     train = fix_obesity(train)
@@ -138,7 +140,11 @@ def handle_missing_data(train, test):
     return train, test
 
 
-def normalise(train, test): 
+def normalise(train, test):
+    """
+    Normalize data:
+    Ie encode yes/no as 1/0 
+    """
     gender_dummies_train = pd.get_dummies(train['Gender'], prefix='gender')
     train = train.join(gender_dummies_train)
 
@@ -179,7 +185,9 @@ def normalise(train, test):
 
 
 if __name__ == "__main__": 
-        
+    """
+    Run through the script
+    """   
     
     parser = ArgumentParser()
     parser.add_argument("--description", action="store", type=str, default="Project-2")
@@ -282,14 +290,14 @@ if __name__ == "__main__":
         dtype = X_train.dtypes[index]
         assert dtype == 'float64' or dtype == 'int64' or dtype == 'uint8', f"feature '{index}' is not of type float or int but {dtype}"
 
-    #Model training
+    # Model training
     clf = tree.DecisionTreeClassifier(max_depth=7)
     clf_full_tree = clf.fit(X_train, y_train)
 
     # predict
     y_test_pred = clf_full_tree.predict(X_test)
 
-   #Some Pruning
+    # Some Pruning
     # Code borrowed from https://www.kaggle.com/code/arunmohan003/pruning-decision-trees-tutorial
 
     # Alpha 0.02 seems like a good trade off between size and complexity
@@ -303,7 +311,6 @@ if __name__ == "__main__":
 
     print('RESULTS')
     print('Pruned tree')
-    #print(f'Train score {accuracy_score(y_train_pred,y_train)}')
     print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test)}')
     print(f'\nFinished in {time.time() - start_time:.2f} seconds')
 
