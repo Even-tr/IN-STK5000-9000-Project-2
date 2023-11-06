@@ -140,10 +140,9 @@ def handle_missing_data(train, test):
     return train, test
 
 
-def normalise(train, test):
+def create_dummies(train, test):
     """
-    Normalize data:
-    Ie encode yes/no as 1/0 
+    Create dummy variables
     """
     gender_dummies_train = pd.get_dummies(train['Gender'], prefix='gender')
     train = train.join(gender_dummies_train)
@@ -266,10 +265,8 @@ if __name__ == "__main__":
     # Handle Missing data 
     train, test = handle_missing_data(train, test)
     
-
-    # Normalise data 
-    train, test = normalise(train, test)
-
+    # Create dummy variables 
+    train, test = create_dummies(train, test)
 
     # Feature selection
     selected_features = num_features + binary_features 
@@ -284,7 +281,6 @@ if __name__ == "__main__":
     # Test set
     X_test = test[selected_features]
     y_test = test['Diabetes']
-
 
     for index in X_train.dtypes.keys():
         dtype = X_train.dtypes[index]
