@@ -1,3 +1,8 @@
+### Prerequisites
+```bash
+pip install -r requirements.txt
+```
+
 
 # LENKER SOM SLETTES VED INNLEVERING 
 https://docs.google.com/presentation/d/1U_PAywkxoO0AGcN5XDDShKzrxjGgmvw63qKXIF6WFFY/edit?usp=sharing
