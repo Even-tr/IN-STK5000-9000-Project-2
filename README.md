@@ -22,11 +22,11 @@ make run INFILE=<your_file_name>
 The makefile accepts the following arguments:
 
 ```
-INFILE ?= diabetes.csv
-OUTFILE ?= anon.csv
-THETA ?= 0.95
+INFILE = diabetes.csv
+OUTFILE = anon.csv
+THETA = 0.95
 N_SAMPLES = 20
-ANON_SEED = -1 # default value means true randomization
+ANON_SEED = -1 
 FIGFOLDER = ./figs/
 ```
 

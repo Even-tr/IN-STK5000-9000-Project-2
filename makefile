@@ -2,9 +2,9 @@
 INFILE ?= diabetes.csv
 OUTFILE ?= anon.csv
 THETA ?= 0.95
-N_SAMPLES = 20
-ANON_SEED = -1 # default value means true randomization
-FIGFOLDER = ./figs/
+N_SAMPLES ?= 20
+ANON_SEED ?= -1 # default value means true randomization
+FIGFOLDER ?= ./figs/
 
 # Simple analysis with normal data
 all:
