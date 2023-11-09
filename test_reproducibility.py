@@ -1,9 +1,11 @@
 # tests reproducbility when anonymizing data
 import subprocess
 import pandas as pd
+import os
+import glob 
 
-outfile1 = 'test_anon1.csv'
-outfile2 = 'test_anon2.csv'
+outfile1 = 'testfiles/test_anon1.csv'
+outfile2 = 'testfiles/test_anon2.csv'
 theta= 0.9
 
 
@@ -30,6 +32,11 @@ def test_reproducible_anonymization():
     df2 = pd.read_csv(outfile2)
 
     pd.testing.assert_frame_equal(df1, df2, check_dtype=False)
+    
+    # remove data files
+    os.remove(outfile1)
+    os.remove(outfile2)
+
 
 
 def test_non_reproducible_anonymization():
@@ -60,7 +67,10 @@ def test_non_reproducible_anonymization():
     else:
          # Raise assertion error if it does not fail
          assert False, 'Truly randomized data has been reproduced'
-
+    
+    # remove data files
+    os.remove(outfile1)
+    os.remove(outfile2)
 
 def test_pipe_reproducibilty():
     """
@@ -78,6 +88,13 @@ def test_pipe_reproducibilty():
     res2 = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, text=True)
 
     assert res1.stdout == res2.stdout, 'Non reproducible pipeline'
+    # remove test figures
+    files = glob.glob('testfigs/*.png')
+    for f in files:
+        os.remove(f)
+
 
 if __name__ == '__main__':
+    test_reproducible_anonymization()
+    test_non_reproducible_anonymization()
     test_pipe_reproducibilty()
