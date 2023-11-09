@@ -31,9 +31,6 @@ def test_reproducible_anonymization():
 
     pd.testing.assert_frame_equal(df1, df2, check_dtype=False)
 
-# tests reproducbility when anonymizing data
-import subprocess
-import pandas as pd
 
 def test_non_reproducible_anonymization():
     """
