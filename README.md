@@ -33,7 +33,7 @@ FIGFOLDER = ./figs/
 Where the right-hand side, displaying the default values, can be replaced with the desired parameters.
 
 #### Some example runs
-1. Run with a  different file
+1. Run with a different file
 ```bash
 make run INFILE=anon.csv
 ```

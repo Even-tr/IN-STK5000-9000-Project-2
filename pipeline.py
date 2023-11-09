@@ -381,7 +381,7 @@ for i, score in enumerate(score_names):
     axs[j,k].set_title(score)
     axs[j,k].legend()
     axs[k,j].set_xlim([0.75,1.01])
-    
+
 plt.savefig(figfolder + 'result_hist.png')
 plt.clf()
 
