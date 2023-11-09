@@ -32,9 +32,12 @@ try:
 except IndexError:
     n_samples = 20
 
+try:
+    figfolder = sys.argv[3] # destination folder for figures
+except IndexError:
+    figfolder = './figs/'
 
 np.random.seed(2023)
-figfolder = './figs/' # destination folder for figures
 
 
 def BMI(weight, height):
@@ -135,7 +138,7 @@ y = diabetes[target]
 X = diabetes.drop(columns=(target))
 
 # If our model has worse accuracy than this, simply guessing 'Postive' is a better model
-print((y=='Positive').mean()) 
+print(f"Mean diabetes in data set: {(y=='Positive').mean()}") 
 
 # features reomved here will not be included in the analysis
 num_features.remove('Urination')
@@ -365,6 +368,7 @@ for param in param_grid.keys():
     plt.hist(ls)
     plt.title(param)
     plt.savefig(figfolder + param + '_dist.png')
+plt.clf()
 
 # Plots nice histograms of measures, both on train and test set, in a single figure.
 # The figure has two columns, and calculates the neccesary number of rows
@@ -377,7 +381,9 @@ for i, score in enumerate(score_names):
     axs[j,k].set_title(score)
     axs[j,k].legend()
     axs[k,j].set_xlim([0.75,1.01])
+    
 plt.savefig(figfolder + 'result_hist.png')
+plt.clf()
 
 
 # Visualizing feature importance, using the DecisionTree()'s build in feature importance measure.
@@ -401,3 +407,4 @@ for feature in feature_importance.keys():
     plt.title(feature)
     plt.xlim([-0.01,0.6]) # add common x-axis for ease of comparison.
     plt.savefig(figfolder + feature + '_dist.png')
+    plt.clf()
