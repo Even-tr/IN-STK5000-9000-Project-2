@@ -1,4 +1,4 @@
-# %%
+
 import warnings
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -23,7 +23,7 @@ from sklearn.model_selection import cross_val_score, GridSearchCV
 
 
 
-# %%
+
 from typing import Literal
 from sklearn.base import BaseEstimator
 import sys
@@ -35,7 +35,7 @@ except IndexError:
     print(f"Default arguments used: {infile}")
 
 np.random.seed(2023)
-
+figfolder = './figs/'
 def BMI(weight, height):
     return weight/(height**2/(100*100))
 
@@ -127,7 +127,7 @@ class Outliers(BaseEstimator, TransformerMixin):
 # 
 # I chose to read data directly for ease of testing
 
-# %%
+
 
 # diabetes = pd.read_csv('diabetes.csv')
 diabetes = pd.read_csv('anon.csv')
@@ -153,7 +153,7 @@ binary_features.remove('TCep')
 
 # # Some helpers
 
-# %%
+
 def fix_height(x, threshold=100):
     """ Converts height in meters to centimeters, if height is less than threshold (default = 100)"""
     col = x.columns[0]
@@ -180,7 +180,7 @@ def fix_formating(x):
 # 
 # Row wise transformations, like outliers, must also be implemented, and I have not looked at that either.
 
-# %%
+
 # Parametric preprocessor where we impute with domain knowledge
 preprocessor_parametric = ColumnTransformer(
     transformers=[
@@ -263,16 +263,12 @@ clf # Displays the pipeline
 # ## Predicting
 # 
 
-# %%
-
-X_train, X_test, y_train, y_test = train_test_split(X, y) # Simple train-test spliot
-
 
 # ## Transformed data frame
 # 
 # Allows inspection into the final preprocessed data frame which the prediction model trains on
 
-# %%
+
 # display(preprocessor.fit_transform(X_train, y_train))
 
 
@@ -281,7 +277,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y) # Simple train-test sp
 # 
 # I implemented a grid search of the parameter space (currently only the max depth, but it can easily be expanded).
 
-# %%
+
 
 param_grid = {
     'classifier__ccp_alpha' : np.linspace(0, 0.001, 10),
@@ -305,17 +301,13 @@ def tune_clf(clf, X_train, y_train, param_grid=param_grid):
     return {'model': best_model, 'train score': best_model.score(X_train, y_train)}
 
 
-# %%
-model = tune_clf(make_clf(tree.DecisionTreeClassifier(ccp_alpha=0.1)), X_train, y_train)['model']
-model['classifier']
-
 
 
 # ### Evaluating multiple metrics
 # 
 # 
 
-# %%
+
 from sklearn.metrics import confusion_matrix 
 
 def score(model, X, y):
@@ -336,17 +328,12 @@ def score(model, X, y):
 
     return acc, prec, rec, f1
 
-score_names = ['accuracy', 'precision', 'recall', 'F1']
-
-score(model, X_test, y_test)
-
-
-
+score_names = ['Accuracy', 'Precision', 'Recall', 'F1']
 
 
 # ### Some bootstrapping
 
-# %%
+
 from sklearn.utils import resample
 
 n_samples = 20
@@ -354,31 +341,59 @@ models = []
 train_scores = np.zeros(shape=(n_samples, len(score_names)))
 test_scores = np.zeros_like(train_scores)
 
-train = X_train
-train['Diabetes'] = y_train
 
+"""
+Discuss this a lot!
+
+Note: we dont correct the bootstrap sample here since it is not clear if the 
+0.628 correction is applicable with zero-one loss (and as a consequence accuracy),
+and in particular, how we correct other performance measures, like Precission and 
+Recall.
+"""
+print(f'Generating bootstrap {n_samples} samples')
 for i in range(n_samples):
-    print(f'{i/n_samples:.2f}')
+    print(f'{i/n_samples*100:3.0f}% done')
 
-    # train_b = train.sample(replace = True, n=len(train.index))
-    # y_b = train_b[target]
-    # X_b = train_b.drop(columns=(target))
+    idx = np.random.choice(range(len(diabetes.index)), size=len(diabetes.index), replace=True)
+    assert len(set(idx)) < len(idx) # testing for repeated samples
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y) # Simple train-test split
+    train = diabetes.iloc[idx]
+    test = diabetes[~diabetes.index.isin(idx)] 
+
+    # testing for complete split
+    assert len(test.index) + len(set(idx)) == len(diabetes.index), f"{len(test.index)}, {len(set(idx))}, {len(diabetes.index)}  "
+    
+    train.reset_index(inplace=True)
+    test.reset_index(inplace=True)
+
+    X_train = train.drop(target, axis=1)
+    y_train = train[target]
+    X_test = test.drop(target, axis=1)
+    y_test = test[target]
+
     model =  tune_clf(make_clf(tree.DecisionTreeClassifier()), X_train, y_train)['model']
+
+    # Making train and test scores
     train_scores[i] = score(model, X_train, y_train)
-
-
     test_scores[i] = score(model, X_test, y_test)
+
+    # Saving model for later inspection
     models.append(model['classifier'])
 
 train_scores = pd.DataFrame(train_scores,columns=score_names)
 test_scores = pd.DataFrame(test_scores,columns=score_names)
 
-
+# Print summary
+results = pd.DataFrame()
+results['train_means'] = train_scores.mean()
+results['train_stdev'] = train_scores.std()
+results['test_means'] = train_scores.mean()
+results['test_stdev'] = train_scores.std()
+print('Sample results')
+print(results)
 # ### Plots distribution of hyperparmeters
 
-# %%
+
 for param in param_grid.keys():
     param = param.split('__')[1] # we ignore the 'classifier__' prefix
     ls = [getattr(model, param) for model in models]
@@ -388,13 +403,26 @@ for param in param_grid.keys():
     plt.show()
 None
 
-# %%
+
 # train_scores.plot(kind = 'hist', title='train scores',subplots=True)
 train_scores.hist()
 test_scores.hist()
 None # hides ugly last line
 
-# %%
+
+# Plotting nice histograms in a single figure
+fig, axs = plt.subplots(2, 2, figsize=(8, 6))
+for i, score in enumerate(score_names):
+    j = i%2
+    k= i//2
+    axs[j,k].hist(train_scores[score], label='train')
+    axs[j,k].hist(test_scores[score], label='test')
+    axs[j,k].set_title(score)
+    axs[j,k].legend()
+    axs[k,j].set_xlim([0.75,1.01])
+plt.savefig(figfolder + 'result_hist.png')
+
+
 # Visualize the feature importance
 feature_importance = {}
 for model in models:
@@ -410,7 +438,7 @@ for model in models:
 # add zero until all
 
 
-# %%
+
 for feature in feature_importance.keys():
     plt.hist(feature_importance[feature])
     plt.title(feature)
