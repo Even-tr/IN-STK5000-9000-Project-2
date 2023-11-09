@@ -15,8 +15,8 @@ run:
 	python ./pipeline.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
 
 # Anonymized Analysis with specified infile and bootstrap samples
-anonamized_run: anonymize
-	python ./pipeline.py $(OUTFILE) $(N_SAMPLES) $(FIGFOLDER)
+anonymized_run: anonymize
+	python ./pipeline.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
 
 # Anonymizes the data
 anonymize:

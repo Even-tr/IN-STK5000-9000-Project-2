@@ -44,12 +44,12 @@ make anonymize OUTFILE=anon.csv THETA=0.9
 
 3. Anonymize and then analyze
 ```bash
-make anonamized_run OUTFILE=anon.csv THETA=0.9
+make anonymized_run OUTFILE=anon.csv THETA=0.9
 ```
 
 4. Anonymize, but with a known seed s.t. it can be reproduced, and then analyze
 ```bash
-make anonamized_run OUTFILE=anon.csv THETA=0.9 ANON_SEED=2023
+make anonymized_run OUTFILE=anon.csv THETA=0.9 ANON_SEED=2023
 ```
 
 
