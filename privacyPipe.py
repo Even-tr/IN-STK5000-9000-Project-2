@@ -16,8 +16,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 import sys
 
-np.random.seed(2023)
-
 
 try:
     infile = sys.argv[1]
@@ -29,6 +27,17 @@ except IndexError:
     theta = 0.95
     print(f"Default arguments used: {infile}, {outfile}, {theta}")
 
+try:
+    seed = int(sys.argv[4])
+    if seed == -1:
+        seed = np.random.randint(2**32 - 1) # sample random seed from 0 to max int
+        print('Non Reproducible seed used')
+except IndexError:
+    seed = np.random.randint(2**32 - 1)
+    print('Non Reproducible seed used')
+
+
+np.random.seed(seed)
 
 # %%
 binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
@@ -116,7 +125,7 @@ def make_privacy_pipeline(theta):
     )
 
 
-    # General preprocesser which encodes and scales all features
+    # Combines steps to a final pipeline
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", num_transformer, num_features),

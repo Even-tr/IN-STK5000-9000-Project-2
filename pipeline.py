@@ -134,6 +134,8 @@ target = 'Diabetes'
 y = diabetes[target]
 X = diabetes.drop(columns=(target))
 
+# If our model has worse accuracy than this, simply guessing 'Postive' is a better model
+print((y=='Positive').mean()) 
 
 # features reomved here will not be included in the analysis
 num_features.remove('Urination')
