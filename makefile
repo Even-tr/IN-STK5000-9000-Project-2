@@ -1,23 +1,18 @@
+INFILE ?= diabetes.csv
+OUTFILE ?= anon.csv
+THETA ?= 0.95
+N_SAMPLES = 20
 
+# Simple analysis with normal data
 all:
-	rm output.txt
-	python script.py --infile='diabetes.csv' >> output.txt
-	cat output.txt
-run:
-	rm output.txt
-ifdef file
-	python script.py --infile=file >> output.txt
-else
-	python script.py --infile='diabetes.csv' >> output.txt
-endif
-	cat output.txt
+	python ./pipeline.py
 
 normal:
-	python ./pipeline.py diabetes.csv
-	
+	python ./pipeline.py $(INFILE) $(N_SAMPLES)
+
 anon:
-	python ./privacyPipe.py diabetes.csv anon.csv 0.95
-	python ./pipeline.py anon.csv
+	python ./privacyPipe.py $(INFILE) $(OUTFILE) $(THETA)
+	python ./pipeline.py $(OUTFILE) $(N_SAMPLES)
 
 
 analysis:

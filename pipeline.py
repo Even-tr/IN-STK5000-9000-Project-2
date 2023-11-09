@@ -20,13 +20,18 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator
 
 
-
 try:
     infile = sys.argv[1]
     print(f'Reading {infile}')
 except IndexError:
     infile = "diabetes.csv"
     print(f"Default arguments used: {infile}")
+
+try:
+    n_samples = int(sys.argv[2])
+except IndexError:
+    n_samples = 20
+
 
 np.random.seed(2023)
 figfolder = './figs/' # destination folder for figures
@@ -291,7 +296,7 @@ score_names = ['Accuracy', 'Precision', 'Recall', 'F1']
 
 # Bootstrapping 
 
-n_samples = 20 # number of bootstrap samples
+# n_samples = 20 # number of bootstrap samples
 models = [] # list to save the constructed models
 train_scores = np.zeros(shape=(n_samples, len(score_names))) # array to save train scores
 test_scores = np.zeros_like(train_scores)   # array to save test scores
@@ -307,7 +312,7 @@ Recall.
 """
 
 # Bootstrap loop
-print(f'Generating bootstrap {n_samples} samples')
+print(f'Generating {n_samples} bootstrap samples')
 for i in range(n_samples):
     print(f'{i/n_samples*100:3.0f}% done')
 
