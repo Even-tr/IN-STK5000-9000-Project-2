@@ -1,41 +1,37 @@
-
 import warnings
-warnings.simplefilter(action='ignore', category=UserWarning)
-warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=UserWarning)    # ignore pesky warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)  # with version specified, future warnings is superfluous (although this is bad practice)
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-# from IPython.display import display
+import sys
+from typing import Literal
 
 # Pipeline imports
 from sklearn.compose import ColumnTransformer
-from sklearn.feature_selection import SelectPercentile, chi2, SelectKBest
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.metrics import confusion_matrix 
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler,FunctionTransformer
 from sklearn import tree
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import cross_val_score, GridSearchCV
-
-
-
-
-from typing import Literal
+from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator
-import sys
+
+
 
 try:
     infile = sys.argv[1]
+    print(f'Reading {infile}')
 except IndexError:
     infile = "diabetes.csv"
     print(f"Default arguments used: {infile}")
 
 np.random.seed(2023)
-figfolder = './figs/'
+figfolder = './figs/' # destination folder for figures
+
+
 def BMI(weight, height):
     return weight/(height**2/(100*100))
 
@@ -121,16 +117,7 @@ class Outliers(BaseEstimator, TransformerMixin):
         return self.columns_
 
 
-
-
-# # Read data
-# 
-# I chose to read data directly for ease of testing
-
-
-
-# diabetes = pd.read_csv('diabetes.csv')
-diabetes = pd.read_csv('anon.csv')
+diabetes = pd.read_csv(infile)
 binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
                 'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
                 'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia', 'Gender']
@@ -152,8 +139,6 @@ binary_features.remove('TCep')
 
 
 # # Some helpers
-
-
 def fix_height(x, threshold=100):
     """ Converts height in meters to centimeters, if height is less than threshold (default = 100)"""
     col = x.columns[0]
@@ -255,30 +240,8 @@ def make_clf(clf):
         ]
     )
 
-clf # Displays the pipeline
 
-
-
-# # Running pipeline
-# ## Predicting
-# 
-
-
-# ## Transformed data frame
-# 
-# Allows inspection into the final preprocessed data frame which the prediction model trains on
-
-
-# display(preprocessor.fit_transform(X_train, y_train))
-
-
-
-# ## Cross validation for parameter tuning
-# 
-# I implemented a grid search of the parameter space (currently only the max depth, but it can easily be expanded).
-
-
-
+# Defining the parameter grid which the pipeline optimizes w.r.t.
 param_grid = {
     'classifier__ccp_alpha' : np.linspace(0, 0.001, 10),
     'classifier__max_depth' : list(range(1,10))
@@ -303,13 +266,7 @@ def tune_clf(clf, X_train, y_train, param_grid=param_grid):
 
 
 
-# ### Evaluating multiple metrics
-# 
-# 
-
-
-from sklearn.metrics import confusion_matrix 
-
+# Defining the metrics we want to and join them in a single function
 def score(model, X, y):
     """
     Accepts a model (implementing a .predict method) and some data, X, with labels y, 
@@ -328,28 +285,28 @@ def score(model, X, y):
 
     return acc, prec, rec, f1
 
+# Note: the shape of this list must match the shape of the return value of score().
 score_names = ['Accuracy', 'Precision', 'Recall', 'F1']
 
 
-# ### Some bootstrapping
+# Bootstrapping 
 
-
-from sklearn.utils import resample
-
-n_samples = 20
-models = []
-train_scores = np.zeros(shape=(n_samples, len(score_names)))
-test_scores = np.zeros_like(train_scores)
+n_samples = 20 # number of bootstrap samples
+models = [] # list to save the constructed models
+train_scores = np.zeros(shape=(n_samples, len(score_names))) # array to save train scores
+test_scores = np.zeros_like(train_scores)   # array to save test scores
 
 
 """
-Discuss this a lot!
+Discuss this a lot, since we have thought about it so much. 
 
 Note: we dont correct the bootstrap sample here since it is not clear if the 
 0.628 correction is applicable with zero-one loss (and as a consequence accuracy),
 and in particular, how we correct other performance measures, like Precission and 
 Recall.
 """
+
+# Bootstrap loop
 print(f'Generating bootstrap {n_samples} samples')
 for i in range(n_samples):
     print(f'{i/n_samples*100:3.0f}% done')
@@ -383,7 +340,8 @@ for i in range(n_samples):
 train_scores = pd.DataFrame(train_scores,columns=score_names)
 test_scores = pd.DataFrame(test_scores,columns=score_names)
 
-# Print summary
+
+# Prints summary statistics
 results = pd.DataFrame()
 results['train_means'] = train_scores.mean()
 results['train_stdev'] = train_scores.std()
@@ -391,30 +349,22 @@ results['test_means'] = train_scores.mean()
 results['test_stdev'] = train_scores.std()
 print('Sample results')
 print(results)
-# ### Plots distribution of hyperparmeters
 
-
+# Plots distribution of hyperparmeters
 for param in param_grid.keys():
     param = param.split('__')[1] # we ignore the 'classifier__' prefix
     ls = [getattr(model, param) for model in models]
 
     plt.hist(ls)
     plt.title(param)
-    plt.show()
-None
+    plt.savefig(figfolder + param + '_dist.png')
 
-
-# train_scores.plot(kind = 'hist', title='train scores',subplots=True)
-train_scores.hist()
-test_scores.hist()
-None # hides ugly last line
-
-
-# Plotting nice histograms in a single figure
-fig, axs = plt.subplots(2, 2, figsize=(8, 6))
+# Plots nice histograms of measures, both on train and test set, in a single figure.
+# The figure has two columns, and calculates the neccesary number of rows
+fig, axs = plt.subplots(len(score_names)//2 + len(score_names)%2, 2, figsize=(8, 6)) 
 for i, score in enumerate(score_names):
-    j = i%2
-    k= i//2
+    j = i%2 
+    k = i//2
     axs[j,k].hist(train_scores[score], label='train')
     axs[j,k].hist(test_scores[score], label='test')
     axs[j,k].set_title(score)
@@ -423,24 +373,24 @@ for i, score in enumerate(score_names):
 plt.savefig(figfolder + 'result_hist.png')
 
 
-# Visualize the feature importance
-feature_importance = {}
-for model in models:
-    fnames = model.feature_names_in_
-    fimp = model.feature_importances_
+# Visualizing feature importance, using the DecisionTree()'s build in feature importance measure.
+# First, all the feature importances must be colleceted, and since the features vary from model
+# to model (due to the pipelines automatic selection), it is slightly complicated.
+
+feature_importance = {} # Save them as a dict.
+for model in models: # Loop through all models
+    fnames = model.feature_names_in_    # get feature names
+    fimp = model.feature_importances_   # and corresponding importances
 
     for i in list(zip(fnames,fimp)):
         if i[0] in feature_importance.keys():
-            feature_importance[i[0]] = feature_importance[i[0]] + [i[1]]
+            feature_importance[i[0]] = feature_importance[i[0]] + [i[1]] # add importance to list if exists
         else:
-            feature_importance[i[0]] =[i[1]]
+            feature_importance[i[0]] =[i[1]] # create new list if first encounter with feature
 
-# add zero until all
-
-
-
+# Finally, loop through dict and plot histograms
 for feature in feature_importance.keys():
     plt.hist(feature_importance[feature])
     plt.title(feature)
-    plt.xlim([-0.01,0.6])
-    plt.show()
+    plt.xlim([-0.01,0.6]) # add common x-axis for ease of comparison.
+    plt.savefig(figfolder + feature + '_dist.png')
