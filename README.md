@@ -1,11 +1,36 @@
 ### Prerequisites
+#### Virtual environments
+We recommend using virtual environments, and made a simple scripts which creates and install the required packages. To create the environment, use this command
+
+```bash
+make venv
+```
+and activate it with this command:
+
+```bash
+source ./IN-STK5000/bin/activate
+```
+The virtual environment can be deactivated using this command
+
+```bash
+deactivate
+```
+And finally, the environment can be cleaned using this command:
+
+```bash
+make clean_venv
+```
+
+#### Global environment
+If however you want to install dependencies directly, please use the following command, but be advised that compatibility might suffer.
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### HOW TO RUN
 
-This project is build using a makefile, which is a convenient interface for more complex command line use. Linux and Mac should have it preinstalled, but windows user might need to install it themselves (see https://gnuwin32.sourceforge.net/packages/make.htm for reference).
+This project is build using a makefile, which is a convenient interface for more complex command line use. Linux and Mac should have it preinstalled, but Windows user might need to install it themselves (see https://gnuwin32.sourceforge.net/packages/make.htm for reference).
 
 To use it, simply write 'make' followed by the predefined run you want to use. For instance,
 
