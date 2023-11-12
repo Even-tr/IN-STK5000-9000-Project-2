@@ -1,8 +1,4 @@
-# %% [markdown]
-# # Simple pipeline to add differential privacy to a data set
-# 
 
-# %%
 import warnings
 warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -16,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 import sys
 
-
+# Read arguments from command line
 try:
     infile = sys.argv[1]
     outfile = sys.argv[2]
@@ -27,6 +23,7 @@ except IndexError:
     theta = 0.95
     print(f"Default arguments used: {infile}, {outfile}, {theta}")
 
+# Read seed from command line
 try:
     seed = int(sys.argv[4])
     if seed == -1:
@@ -36,10 +33,10 @@ except IndexError:
     seed = np.random.randint(2**32 - 1)
     print('Non Reproducible seed used')
 
-
+# Set seed
 np.random.seed(seed)
 
-# %%
+# Define features
 binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
                 'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
                 'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia', 'Gender']
@@ -49,26 +46,39 @@ num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
 
 target = 'Diabetes'
 
-# %%
 
 def randomize_binary(a, theta):
     """
-    Accepts a vector of binary values and add randomized noise, parameterized by theta = probability of answering truthfully.
+     Inject random noise into a vector of binary responses based on a given probability (theta). 
+     The probability theta represents the chance of a truthful response. 
+
+     Parameters:
+        a (array-like): vector of binary responses (no, yes / 1, 0)
+        theta (float): probability of answering truthfully
+
+    Returns:
+        array-like: vector of randomized responses
     """
-    coins = np.random.choice([True, False], p=(theta, (1-theta)), size=a.shape)
+    # Generates a set of random boolean values with a probability theta of being True. 
+    coins = np.random.choice([True, False], p=(theta, (1-theta)), size=a.shape) 
+    #  Generates a set of random strings ('no', 'yes', 'No', 'Yes') to match original data format 
     noise = np.random.choice(['no', 'yes', 'No', 'Yes'], size=a.shape)
+    # creates a copy of the original data 
     response = np.array(a)
+    # replaces the values with noise where the coin is False
     response[~coins] = noise[~coins]
     return response
 
 def randomize_categorical(a, theta):
     """
+    TO DO IN FUTURE
     placeholder function for adding privacy noise for categorical columns
     """
     return a
 
 def randomize_numerical(a, theta):
     """
+    TO DO IN FUTURE
     placeholder function for adding privacy noise for numerical columns
     """
     return a
@@ -96,7 +106,6 @@ def calculate_epsilon(theta):
 assert calculate_epsilon(0.5) == np.log(3) # result from lecture notes
 
 
-# %%
 def make_privacy_pipeline(theta):   
     """
     Takes a probability for answering truthfully and creates a pipeline which adds
@@ -138,7 +147,6 @@ def make_privacy_pipeline(theta):
     
     return preprocessor
 
-# %%
 def anonymize_data(infile, theta, outfile = None):
 
     # read data
@@ -149,7 +157,7 @@ def anonymize_data(infile, theta, outfile = None):
     # make pipeline
     preprocessor = make_privacy_pipeline(theta=theta)
 
-    # run pipeline
+    # run pipeline to add noise
     out_data = preprocessor.fit_transform(X,y)
 
     # reformat to same match infile
@@ -164,12 +172,14 @@ def anonymize_data(infile, theta, outfile = None):
 
     return out_data
 
-# %%
+
 def test_random():
-    out_data = anonymize_data('diabetes.csv', 0.95)
-    diabetes = pd.read_csv('diabetes.csv')
+    """Testing if data is randomized by setting theta to 0.95 """
+
+    out_data = anonymize_data('diabetes.csv', 0.95) # set theta to 0.95
+    diabetes = pd.read_csv('diabetes.csv') # read original data
     try:
-        pd.testing.assert_frame_equal(diabetes, out_data, check_dtype=False)
+        pd.testing.assert_frame_equal(diabetes, out_data, check_dtype=False) # compare data
     except AssertionError:
         pass
     else:
@@ -177,6 +187,7 @@ def test_random():
     
 
 def test_equal():
+    """Testing if data is not randomized by setting theta to 1.0 """
     out_data = anonymize_data('diabetes.csv', 1)
     diabetes = pd.read_csv('diabetes.csv')
     pd.testing.assert_frame_equal(diabetes, out_data, check_dtype=False)
@@ -184,5 +195,4 @@ def test_equal():
 test_random()
 test_equal()
 
-# %%
 out_data = anonymize_data(infile, theta, outfile=outfile)

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 from typing import Literal
-
+from tqdm import tqdm
 
 # Pipeline imports
 from sklearn.compose import ColumnTransformer
@@ -229,9 +229,70 @@ def fix_formating(x):
 
 
 
+
+
+
+def visualise_feature_importance(models): 
+    """
+    Visualising feature importance using the DecisionTree()'s build in feature importance measure
+    and plots a histogram of the feature importance of each feature.
+
+    Parameters:
+        models (list): list of models to be analyzed   
+    
+    """
+
+    feature_importance = {} # Save features as a dict.
+    for model in models: # Loop through all models
+        fnames = model.feature_names_in_    # get feature names
+        fimp = model.feature_importances_   # and corresponding importances
+
+        for i in list(zip(fnames,fimp)):
+            if i[0] in feature_importance.keys():
+                feature_importance[i[0]] = feature_importance[i[0]] + [i[1]] # add importance to list if exists
+            else:
+                feature_importance[i[0]] =[i[1]] # create new list if first encounter with feature
+
+    # Finally, loop through dict and plot histograms
+    for feature in feature_importance.keys():
+        plt.hist(feature_importance[feature])
+        plt.title(feature)
+        plt.xlim([-0.01,0.6]) # add common x-axis for ease of comparison.
+        plt.savefig(figfolder + feature + '_dist.png')
+        plt.clf()
+
+def visualise_results(train_scores, test_scores, score_names):
+    """
+    Plots histograms of each metric on both train and test set in a single figure.
+
+    Parameters:
+        train_scores (pd.DataFrame): DataFrame of train scores
+        test_scores (pd.DataFrame): DataFrame of test scores
+        score_names (list): list of score names
+    """
+    fig, axs = plt.subplots(len(score_names)//2 + len(score_names)%2, 2, figsize=(8, 6)) 
+    for i, score in enumerate(score_names):
+        j = i%2 
+        k = i//2
+        axs[j,k].hist(train_scores[score], label='train')
+        axs[j,k].hist(test_scores[score], label='test')
+        axs[j,k].set_title(score)
+        axs[j,k].legend()
+        axs[k,j].set_xlim([0.75,1.01])
+
+    plt.savefig(figfolder + 'result_hist.png')
+    plt.clf()
+
+
+
 if __name__ == "__main__":  
 
+    print(f"Reading {infile}")
+    print("----------------------------------------")
+
     diabetes = pd.read_csv(infile)
+
+    # Defining features
     binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakness',
                     'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
                     'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia', 'Gender']
@@ -239,13 +300,14 @@ if __name__ == "__main__":
     num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
 
     target = 'Diabetes'
-    y = diabetes[target]
-    X = diabetes.drop(columns=(target))
+
+    y = diabetes[target] # target variable
+    X = diabetes.drop(columns=(target)) # features
 
     # If our model has worse accuracy than this, simply guessing 'Postive' is a better model
-    print(f"Mean diabetes in data set: {(y=='Positive').mean()}") 
 
-    # features reomved here will not be included in the analysis
+    print(f"Mean diabetes in data set: {(y=='Positive').mean()}") 
+    # Removing features that will not be included in the analysis
     num_features.remove('Urination')
     cat_features.remove('GP')
     cat_features.remove('Race')
@@ -337,7 +399,7 @@ if __name__ == "__main__":
             ]
     )
 
-
+    # make model
     def make_clf(clf):
         return Pipeline(
         steps=[
@@ -387,35 +449,46 @@ if __name__ == "__main__":
 
     Note: we dont correct the bootstrap sample here since it is not clear if the 
     0.628 correction is applicable with zero-one loss (and as a consequence accuracy),
-    and in particular, how we correct other performance measures, like Precission and 
+    and in particular, how we correct other performance measures, like Precision and 
     Recall.
     """
 
     # Bootstrap loop
-    print(f'Generating {n_samples} bootstrap samples')
-    for i in range(n_samples):
-        print(f'{i/n_samples*100:3.0f}% done')
+    print("----------------------------------------")
+    print(f'Generating {n_samples} bootstrap samples') 
+    print("Training and tuning models for each sample")
 
-        idx = np.random.choice(range(len(diabetes.index)), size=len(diabetes.index), replace=True)
+    for i in tqdm(range(n_samples), desc="Bootstrapping", unit="sample"):
+
+
+    #for i in range(n_samples):
+        #print(f'{i/n_samples*100:3.0f}% done')
+
+        # random sampling with replacement.
+        idx = np.random.choice(range(len(diabetes.index)), size=len(diabetes.index), replace=True) 
         assert len(set(idx)) < len(idx) # testing for repeated samples
 
+        # split into training and test sets
         train = diabetes.iloc[idx]
         test = diabetes[~diabetes.index.isin(idx)] 
 
         # testing for complete split
         assert len(test.index) + len(set(idx)) == len(diabetes.index), f"{len(test.index)}, {len(set(idx))}, {len(diabetes.index)}  "
         
+        #Resetting index to avoid errors
         train.reset_index(inplace=True)
         test.reset_index(inplace=True)
 
+        # Splitting into X and y
         X_train = train.drop(target, axis=1)
         y_train = train[target]
         X_test = test.drop(target, axis=1)
         y_test = test[target]
 
+        # decision tree classifier is instantiated and trained
         model =  tune_clf(make_clf(tree.DecisionTreeClassifier()), X_train, y_train)['model']
 
-        # Making train and test scores
+        # Calculate models performance on train and test set
         train_scores[i] = score(model, X_train, y_train)
         test_scores[i] = score(model, X_test, y_test)
 
@@ -428,14 +501,15 @@ if __name__ == "__main__":
 
     # Prints summary statistics
     results = pd.DataFrame()
-    results['train_means'] = train_scores.mean()
+    results['train_mean'] = train_scores.mean()
     results['train_stdev'] = train_scores.std()
-    results['test_means'] = test_scores.mean()
+    results['test_mean'] = test_scores.mean()
     results['test_stdev'] = test_scores.std()
-    print('Sample results')
+    print("----------------------------------------")
+    print('Sample results:')
     print(results)
 
-    # Plots distribution of hyperparmeters
+    # Plot distribution of hyperparmeters
     for param in param_grid.keys():
         param = param.split('__')[1] # we ignore the 'classifier__' prefix
         ls = [getattr(model, param) for model in models]
@@ -445,41 +519,6 @@ if __name__ == "__main__":
         plt.savefig(figfolder + param + '_dist.png')
     plt.clf()
 
-    # Plots nice histograms of measures, both on train and test set, in a single figure.
-    # The figure has two columns, and calculates the neccesary number of rows
-    fig, axs = plt.subplots(len(score_names)//2 + len(score_names)%2, 2, figsize=(8, 6)) 
-    for i, score in enumerate(score_names):
-        j = i%2 
-        k = i//2
-        axs[j,k].hist(train_scores[score], label='train')
-        axs[j,k].hist(test_scores[score], label='test')
-        axs[j,k].set_title(score)
-        axs[j,k].legend()
-        axs[k,j].set_xlim([0.75,1.01])
-
-    plt.savefig(figfolder + 'result_hist.png')
-    plt.clf()
-
-
-    # Visualizing feature importance, using the DecisionTree()'s build in feature importance measure.
-    # First, all the feature importances must be colleceted, and since the features vary from model
-    # to model (due to the pipelines automatic selection), it is slightly complicated.
-
-    feature_importance = {} # Save them as a dict.
-    for model in models: # Loop through all models
-        fnames = model.feature_names_in_    # get feature names
-        fimp = model.feature_importances_   # and corresponding importances
-
-        for i in list(zip(fnames,fimp)):
-            if i[0] in feature_importance.keys():
-                feature_importance[i[0]] = feature_importance[i[0]] + [i[1]] # add importance to list if exists
-            else:
-                feature_importance[i[0]] =[i[1]] # create new list if first encounter with feature
-
-    # Finally, loop through dict and plot histograms
-    for feature in feature_importance.keys():
-        plt.hist(feature_importance[feature])
-        plt.title(feature)
-        plt.xlim([-0.01,0.6]) # add common x-axis for ease of comparison.
-        plt.savefig(figfolder + feature + '_dist.png')
-        plt.clf()
+    #plotting results (metrics and feature importance)
+    visualise_results(train_scores, test_scores, score_names)
+    visualise_feature_importance(models)
