@@ -3,26 +3,38 @@
 We recommend using virtual environments, and made a simple scripts which creates and install the required packages. This guide is made for Unix based systems.
 For windows, consider using WSL, or consult the documentation: https://docs.python.org/3/library/venv.html
 
-To create the environment, use this command
+To create the environment, use this command (Unix):
 
 ```bash
 make venv
 ```
-and activate it with this command:
+
+(windows)
+```cmd
+make venv_windows
+```
+and activate it with this command (Unix):
 
 ```bash
 source ./IN-STK5000/bin/activate
+```
+
+(windows)
+```cmd
+source .\IN-STK5000\Scripts\activate
 ```
 The virtual environment can be deactivated using this command:
 
 ```bash
 deactivate
 ```
-And finally, the environment can be cleaned using this command:
+And finally, the environment can be cleaned using this command (Unix):
 
 ```bash
 make clean_venv
 ```
+
+Or delete the folder manually.
 
 #### Global environment
 If however you want to install dependencies directly, please use the following command, but be advised that compatibility might suffer.
