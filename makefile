@@ -6,29 +6,30 @@ N_SAMPLES ?= 20
 ANON_SEED ?= -1 # default value means true randomization
 FIGFOLDER ?= ./figs/
 VENV_NAME ?=IN-STK5000
+
 # Simple analysis with normal data
 all:
-	python3 ./pipeline.py 
+	python ./pipeline.py 
 
 # Analysis with specified infile and bootstrap samples
 run:
-	python3 ./pipeline.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
+	python ./pipeline.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
 
 # Anonymized Analysis with specified infile and bootstrap samples
 anonymized_run: anonymize
-	python3 ./pipeline.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
+	python ./pipeline.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
 
 # Anonymizes the data
 anonymize:
-	python3 ./privacyPipe.py $(INFILE) $(OUTFILE) $(THETA) $(ANON_SEED)
+	python ./privacyPipe.py $(INFILE) $(OUTFILE) $(THETA) $(ANON_SEED)
 
 
 # creates a virual enviroment
 venv:
-	python3 -m venv $(VENV_NAME) && source $(VENV_NAME)/bin/activate && pip install -r requirements.txt
+	python3 -m venv $(VENV_NAME) && source $(VENV_NAME)/bin/activate && pip3 install -r requirements.txt
 
 venv_windows:
-	python3 -m venv $(VENV_NAME) && .\$(VENV_NAME)\Scripts\activate && pip install -r requirements.txt
+	python3 -m venv $(VENV_NAME) && .\$(VENV_NAME)\Scripts\activate && pip3 install -r requirements.txt
 
 
 # removes the virtual enviroment
