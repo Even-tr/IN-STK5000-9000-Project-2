@@ -164,6 +164,7 @@ def anonymize_data(infile, theta, outfile = None):
     out_data.columns = num_features + cat_features + binary_features
     out_data['Gender'] = out_data['Gender'].replace({'yes':'Male', 'no':'Female', 'Yes':'Male', 'No':'Female'}) 
     out_data['Diabetes'] = y
+
     out_data = out_data.reindex(columns=indata.columns)
 
     # save data 
@@ -195,4 +196,5 @@ def test_equal():
 test_random()
 test_equal()
 
+print(f'Anonymizing with theta {theta}, giving epsilon {calculate_epsilon(theta)}')
 out_data = anonymize_data(infile, theta, outfile=outfile)

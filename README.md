@@ -52,13 +52,15 @@ conda env create -f environment.yml
 
 This project is build using a makefile, which is a convenient interface for more complex command line use. Linux and Mac should have it preinstalled, but Windows user might need to install it themselves (see https://gnuwin32.sourceforge.net/packages/make.htm for reference - and remember to add it to the path!).
 
-To use it, simply write 'make' followed by the predefined run you want to use. For instance,
+To use it, simply write 'make' followed by the predefined run you want to use. Our main experiment is run with:
 
 ```bash
 make all
 ```
 
-runs the first predefined command in the make file, which simply runs the analysis pipeline with default arguments. If you want to run the analysis on a different file, please write 
+Which first runs our baseline implementation, then our new implementation with N_SAMPLES=100. (i.e. 100 bootstrap samples for the score ranges). It then reruns our new implementation with two levels of anonymization. In the first one, the probability of answering truthfully is 0.5, yielding ln(3) privacy. In the second experiment, this is much higher at 0.95.
+
+For general usage, some examples presented below showing the interface.
 
 ```bash
 make run INFILE=<your_file_name>
@@ -67,12 +69,12 @@ make run INFILE=<your_file_name>
 The makefile accepts the following arguments:
 
 ```
-INFILE = diabetes.csv
-OUTFILE = anon.csv
-THETA = 0.95
-N_SAMPLES = 20
-ANON_SEED = -1 
-FIGFOLDER = ./figs/
+INFILE      = diabetes.csv
+OUTFILE     = anon.csv
+THETA       = 0.95
+N_SAMPLES   = 100
+ANON_SEED   = -1 
+FIGFOLDER   = ./figs/
 ```
 
 Where the right-hand side, displaying the default values, can be replaced with the desired parameters.

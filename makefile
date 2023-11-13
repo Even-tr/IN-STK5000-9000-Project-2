@@ -2,22 +2,31 @@
 INFILE ?= diabetes.csv
 OUTFILE ?= anon.csv
 THETA ?= 0.95
-N_SAMPLES ?= 20
+N_SAMPLES ?= 100
 ANON_SEED ?= -1 # default value means true randomization
 FIGFOLDER ?= ./figs/
 VENV_NAME ?=IN-STK5000
 
 # Simple analysis with normal data
-all:
-	python ./pipeline.py 
+all: 
+	python ./baseline.py
+	python ./main.py 		$(INFILE) $(N_SAMPLES) $(FIGFOLDER)
+	python ./privacyPipe.py $(INFILE) $(OUTFILE) 0.5 $(ANON_SEED) 
+	python ./main.py 		$(OUTFILE) $(N_SAMPLES) ./anonymized_figs_theta05/ 0.5
+	python ./privacyPipe.py $(INFILE) $(OUTFILE) 0.95 $(ANON_SEED) 
+	python ./main.py 		$(OUTFILE) $(N_SAMPLES) ./anonymized_figs_theta095/ 0.95
+
+baseline:
+	python ./baseline.py
+
 
 # Analysis with specified infile and bootstrap samples
 run:
-	python ./pipeline.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
+	python ./main.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
 
 # Anonymized Analysis with specified infile and bootstrap samples
 anonymized_run: anonymize
-	python ./pipeline.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
+	python ./main.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
 
 # Anonymizes the data
 anonymize:

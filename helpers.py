@@ -1,10 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.stats import chi2_contingency, pearsonr
-from sklearn.metrics import accuracy_score,confusion_matrix, precision_recall_fscore_support
-from scipy.stats import pointbiserialr
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 ##########################
 ###### CORRELATIONS ######
