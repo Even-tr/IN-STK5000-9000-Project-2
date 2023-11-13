@@ -27,10 +27,10 @@ except IndexError:
 try:
     seed = int(sys.argv[4])
     if seed == -1:
-        seed = np.random.randint(2**32 - 1) # sample random seed from 0 to max int
+        seed = np.random.randint(2**16 - 1) # sample random seed from 0 to max int
         print('Non Reproducible seed used')
 except IndexError:
-    seed = np.random.randint(2**32 - 1)
+    seed = np.random.randint(2**16 - 1)
     print('Non Reproducible seed used')
 
 # Set seed
