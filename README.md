@@ -21,7 +21,7 @@ source ./IN-STK5000/bin/activate
 
 (windows)
 ```cmd
-source .\IN-STK5000\Scripts\activate
+.\IN-STK5000\Scripts\activate
 ```
 The virtual environment can be deactivated using this command:
 

@@ -8,19 +8,19 @@ FIGFOLDER ?= ./figs/
 VENV_NAME ?=IN-STK5000
 # Simple analysis with normal data
 all:
-	python ./pipeline.py 
+	python3 ./pipeline.py 
 
 # Analysis with specified infile and bootstrap samples
 run:
-	python ./pipeline.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
+	python3 ./pipeline.py $(INFILE) $(N_SAMPLES) $(FIGFOLDER)
 
 # Anonymized Analysis with specified infile and bootstrap samples
 anonymized_run: anonymize
-	python ./pipeline.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
+	python3 ./pipeline.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
 
 # Anonymizes the data
 anonymize:
-	python ./privacyPipe.py $(INFILE) $(OUTFILE) $(THETA) $(ANON_SEED)
+	python3 ./privacyPipe.py $(INFILE) $(OUTFILE) $(THETA) $(ANON_SEED)
 
 
 # creates a virual enviroment
