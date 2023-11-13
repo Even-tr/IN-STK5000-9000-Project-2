@@ -37,7 +37,7 @@ make clean_venv
 Or delete the folder manually.
 
 #### Global environment
-If however you want to install dependencies directly, please use the following command, but be advised that compatibility might suffer.
+If however you want to install dependencies directly, please use the following command, but be advised that you might encounter compatibility errors.
 
 ```bash
 pip install -r requirements.txt
