@@ -50,7 +50,7 @@ conda env create -f environment.yml
 
 ### HOW TO RUN
 
-This project is build using a makefile, which is a convenient interface for more complex command line use. Linux and Mac should have it preinstalled, but Windows user might need to install it themselves (see https://gnuwin32.sourceforge.net/packages/make.htm for reference).
+This project is build using a makefile, which is a convenient interface for more complex command line use. Linux and Mac should have it preinstalled, but Windows user might need to install it themselves (see https://gnuwin32.sourceforge.net/packages/make.htm for reference - and remember to add it to the path!).
 
 To use it, simply write 'make' followed by the predefined run you want to use. For instance,
 
