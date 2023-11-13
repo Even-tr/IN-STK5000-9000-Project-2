@@ -126,7 +126,7 @@ class AddBMI(BaseEstimator, TransformerMixin):
     Methods:
         fit(self, X, y=None): Fit transformer by checking X. 
         transform(self, X, y=None): Using the forward function to set X 
-        set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator: Set output to pandas dataframe
+        set_output(self, *, transform) -> BaseEstimator: Set output to pandas dataframe
 
     """
     
@@ -142,7 +142,7 @@ class AddBMI(BaseEstimator, TransformerMixin):
         X['BMI'] = BMI(X['Weight'], X['Height'])
         return X
     
-    def set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator:
+    def set_output(self, *, transform) -> BaseEstimator:
         return super().set_output(transform=transform)
 
 class Outliers(BaseEstimator, TransformerMixin):
