@@ -38,4 +38,4 @@ clean_venv:
 clean_venv_windows:
 	rmdir /s /q $(VENV_NAME)
 
-.PHONY: venv clean_venv
+.PHONY: venv clean_venv venv_windows clean_venv_windows
