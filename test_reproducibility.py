@@ -4,9 +4,18 @@ import pandas as pd
 import os
 import glob 
 
-outfile1 = 'testfiles/test_anon1.csv'
-outfile2 = 'testfiles/test_anon2.csv'
+test_dir = 'testfiles'
+test_fig_dir = 'testfigs'
+
+outfile1 = test_dir+'/test_anon1.csv'
+outfile2 = test_dir+'/test_anon2.csv'
 theta= 0.9
+
+if not os.path.exists(test_dir):
+    os.mkdir(test_dir)
+
+if not os.path.exists(test_fig_dir):
+    os.mkdir(test_fig_dir)
 
 
 def test_reproducible_anonymization():
