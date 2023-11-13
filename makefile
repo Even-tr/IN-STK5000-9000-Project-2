@@ -27,8 +27,15 @@ anonymize:
 venv:
 	python3 -m venv $(VENV_NAME) && source $(VENV_NAME)/bin/activate && pip install -r requirements.txt
 
+venv_windows:
+	python3 -m venv $(VENV_NAME) && .\$(VENV_NAME)\Scripts\activate && pip install -r requirements.txt
+
+
 # removes the virtual enviroment
 clean_venv:
 	rm -rf $(VENV_NAME)
+
+clean_venv_windows:
+	rmdir /s /q $(VENV_NAME)
 
 .PHONY: venv clean_venv
