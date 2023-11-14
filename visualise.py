@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 def visualise_feature_importance(models, figfold, config_str=""): 
     """
@@ -41,13 +42,15 @@ def visualise_results(train_scores, test_scores, score_names, figfold, config_st
     fig, axs = plt.subplots(len(score_names)//2 + len(score_names)%2, 2, figsize=(8, 6)) 
     
     for i, score in enumerate(score_names):
+        # index magic (it works)
         j = i%2 
         k = i//2
-        axs[j,k].hist(train_scores[score], label='train')
+        axs[j,k].hist(train_scores[score], label='train', bins = np.linspace(0.9, 1, 10))
         axs[j,k].hist(test_scores[score], label='test')
         axs[j,k].set_title(f'{score} {config_str}')
         axs[j,k].legend()
-        axs[k,j].set_xlim([0.65 ,1.01])
+        axs[k,j].set_xlim([0.65 ,1.01]) # set reasonable axes for distribution
+        axs[k,j].set_ylim([0, len(train_scores.index)//2 + 1]) # set ylim to half of sample size, rounding up
 
     plt.savefig(figfold + 'result_hist.png')
     plt.clf()

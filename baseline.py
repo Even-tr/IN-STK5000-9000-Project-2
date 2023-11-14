@@ -200,10 +200,7 @@ if __name__ == "__main__":
     # writing essential info to terminal / outfile"
     print("\n\n==========================================================\n")
     print(str(datetime.datetime.now()))
-    print("\n\nArgs: \n")
-    for arg in vars(args):
-        print(' {} {}'.format(arg, getattr(args, arg) or ''))
-    
+
     # set all kinds of seeds for reproducibility
     seed_everything(args.seed)
 
@@ -305,8 +302,7 @@ if __name__ == "__main__":
     y_test_pred = clf_pruned_tree.predict(X_test)
 
     print('RESULTS')
-    print('Pruned tree')
-    print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test)}')
-    print(f'\nFinished in {time.time() - start_time:.2f} seconds')
+    print(f'Train Accuarcy {accuracy_score(y_train_pred,y_train): .3f}')
+    print(f'Test Accuarcy {accuracy_score(y_test_pred,y_test): .3f}')
 
-    tree.plot_tree(clf_pruned_tree, feature_names=selected_features, class_names=classes, filled=True)
+    print('\n')
