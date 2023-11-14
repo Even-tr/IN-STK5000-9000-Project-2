@@ -99,6 +99,18 @@ make anonymized_run OUTFILE=anon.csv THETA=0.9
 make anonymized_run OUTFILE=anon.csv THETA=0.9 ANON_SEED=2023
 ```
 
+#### Command line arguments
+Our experiments are defined by specifying command line arguments. These arguments can also be accessed when using the makefile, and doing it with this abstraction allows for convenient key word argument usage.
+
+```bash
+main.py <infile> <bootstrap samples> <figfolder> <theta>
+```
+The first argument is the dataset which is analyzed. The second is the number of bootstrap samples (we used 100). The third is the destination folder for the generated figures - specifying a unique folder for each run avoids overwriting. The final argument is simply the theta used when privatizing. It only adds this information to the figures, and does not impact the runtime. If this is unspecified, this information will be omitted.
+
+```bash
+privacyPipe.py <infile> <outfile> <theta> <seed>
+```
+The first argument is the path to the data set to be anonymized. The second is the path to the new data set which is created. The third argument specifies the probability of answering truthfully (theta) - the higher the theta the less anonymization. The final argument is the seed used for anonymization. If this is unspecified, a truly random (and therefore non-reproducible) data set is generated.
 
 # LENKER SOM SLETTES VED INNLEVERING 
 https://docs.google.com/presentation/d/1U_PAywkxoO0AGcN5XDDShKzrxjGgmvw63qKXIF6WFFY/edit?usp=sharing
