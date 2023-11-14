@@ -1,5 +1,7 @@
-### Prerequisites
-#### Virtual environments
+### Prerequisites 
+We provide several different ways to install the required packages:
+
+### Virtual environments
 We recommend using virtual environments, and made a simple scripts which creates and install the required packages. This guide is made for Unix based systems.
 For windows, consider using WSL, or consult the documentation: https://docs.python.org/3/library/venv.html
 
@@ -36,13 +38,13 @@ make clean_venv
 
 Or delete the folder manually.
 
-#### Global environment
+## Global environment
 If however you want to install dependencies directly, please use the following command, but be advised that you might encounter compatibility errors.
 
 ```bash
 pip install -r requirements.txt
 ```
-or create environment:
+## Evironment in conda:
 ```bash
 conda env create -f environment.yml
 ```
