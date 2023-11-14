@@ -12,7 +12,9 @@ from sklearn.model_selection import train_test_split
 from sklearn import tree
 
 # Local imports
+
 from pipeline import make_clf, tune_clf, param_grid, cat_features, num_features, binary_features
+
 from score import score, score_names
 from visualise import visualise_feature_importance, visualise_results
 
@@ -59,6 +61,7 @@ if __name__ == "__main__":
     print(f"Mean diabetes in data set: {(y=='Positive').mean()}") 
     print("----------------------------------------")
 
+
     # Single run resutls
     print('Results for single run of model')
     train, test = train_test_split(diabetes, train_size=0.8)
@@ -73,7 +76,9 @@ if __name__ == "__main__":
     results.index=score_names
     results['train'] = score(model, X_train, y_train)
     results['test'] = score(model, X_test, y_test)
-    print(results, '\n')
+    with pd.option_context('display.float_format', '{:0.3f}'.format):
+        print(results)
+
 
 
     # Bootstrapping results
@@ -146,7 +151,8 @@ if __name__ == "__main__":
     results['test_stdev'] = test_scores.std()
     print("----------------------------------------")
     print('Sample results:')
-    print(results)
+    with pd.option_context('display.float_format', '{:0.3f}'.format):
+        print(results)
 
     # Plot distribution of hyperparmeters
     for param in param_grid.keys():

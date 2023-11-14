@@ -29,6 +29,11 @@ binary_features.remove('TCep')
 
 target = 'Diabetes'
 
+# Removing features that will not be included in the analysis
+num_features.remove('Urination')
+cat_features.remove('GP')
+cat_features.remove('Occupation')
+binary_features.remove('TCep')
 
 def BMI(weight, height):
     """
@@ -52,7 +57,7 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
         _BMI(self, X, y=None, threshold=30): Imputes Obesity from BMI for missing obseity values
         _fix_polydipsia(self, df, threshold=2.5): Imputes Polydipsia from Urination for missing polydipsia values
         transform(self, X, y=None, threshold_BMI=30, threshold_Polydipsia= 2.5): Using the forward function to set X 
-        set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator: Set output to pandas dataframe
+        set_output(self, *, transform) -> BaseEstimator: Set output to pandas dataframe
 
     """
 
@@ -99,7 +104,7 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
         return X
    
     
-    def set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator:
+    def set_output(self, *, transform) -> BaseEstimator:
         return super().set_output(transform=transform)
 
 class Preprocessing(BaseEstimator, TransformerMixin):
