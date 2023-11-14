@@ -11,9 +11,9 @@ VENV_NAME ?=IN-STK5000
 all: 
 	python ./baseline.py
 	python ./main.py 		$(INFILE) $(N_SAMPLES) $(FIGFOLDER)
-	python ./privacyPipe.py $(INFILE) $(OUTFILE) 0.5 $(ANON_SEED) 
+	python ./privacyPipe.py $(INFILE) $(OUTFILE) 0.5 1984
 	python ./main.py 		$(OUTFILE) $(N_SAMPLES) ./anonymized_figs_theta05/ 0.5
-	python ./privacyPipe.py $(INFILE) $(OUTFILE) 0.95 $(ANON_SEED) 
+	python ./privacyPipe.py $(INFILE) $(OUTFILE) 0.95 1984
 	python ./main.py 		$(OUTFILE) $(N_SAMPLES) ./anonymized_figs_theta095/ 0.95
 
 baseline:
