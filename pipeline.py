@@ -85,6 +85,18 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
         df.loc[idx3,'Polydipsia'] = 1
         #df.loc[idx,]
         return df
+
+    #preprocessing functions
+    """def fix_height(self, x, threshold=100):
+
+        #col = x.columns[0]
+        mask = x['Height'] < threshold
+        x.loc[mask, ['Height']] = x.loc[mask, ['Height']].mul(100)
+        return x
+
+    def fix_formating(self, x):
+    
+        return x.replace({'yes':1, 'Yes': 1, 'Positive':1, 'no':0, 'No':0, 'Negative':0, 'Male':1,'Female':0})"""
     
     def transform(self, X, y=None, threshold_BMI=30, threshold_Polydipsia= 2.5):
         X = self._BMI(X, threshold=threshold_BMI)
@@ -95,6 +107,36 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
     def set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator:
         return super().set_output(transform=transform)
 
+class Preprocessing(BaseEstimator, TransformerMixin):
+
+    def __init__(self):
+        super().__init__()
+
+    def fit(self, X, y=None):
+        """Expected method by the pipeline API"""
+        return self
+
+    # preprocessing functions
+    def fix_height(self, x, threshold=100):
+
+        #col = x.columns[0]
+        mask = x['Height'] < threshold
+        x.loc[mask, ['Height']] = x.loc[mask, ['Height']].mul(100)
+        return x
+
+    def fix_formating(self, x):
+    
+        return x.replace({'yes':1, 'Yes': 1, 'Positive':1, 'no':0, 'No':0, 'Negative':0, 'Male':1,'Female':0})
+
+    def transform(self, X, y=None, threshold_Height=100):
+        X = self.fix_height(X, threshold=threshold_Height)
+        X = self.fix_formating(X)
+        return X
+   
+    
+    def set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator:
+        return super().set_output(transform=transform)
+        
 
 class AddBMI(BaseEstimator, TransformerMixin):
     """
@@ -201,7 +243,7 @@ preprocessor_parametric = ColumnTransformer(
 
 binary_transformer = Pipeline(
     steps=[
-        ('Fix formating', FunctionTransformer(fix_formating)),
+        #('Fix formating', FunctionTransformer(fix_formating)),
         ("imputer", SimpleImputer(strategy="constant", fill_value=0)),
         # ('randomize', FunctionTransformer(randomize)), # privacy has been moved to a separate pipeline
         # ("selector", SelectKBest(k=5)),
@@ -241,6 +283,7 @@ preprocessor_general = ColumnTransformer(
 preprocessor = Pipeline(
     steps=[
         ('Custom impute', CustomTransformer()),
+        ('Preprocessing', Preprocessing()),
         # ('Add columns', AddBMI()),
         ("preprocessor parametric", preprocessor_parametric), 
         ("preprocessor general", preprocessor_general), 
