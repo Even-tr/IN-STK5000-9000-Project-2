@@ -18,7 +18,14 @@ binary_features = ['Obesity', 'TCep', 'Polydipsia', 'Sudden Weight Loss', 'Weakn
                 'Polyphagia', 'Genital Thrush', 'Visual Blurring', 'Itching',
                 'Irritability', 'Delayed Healing', 'Partial Paresis', 'Muscle Stiffness', 'Alopecia', 'Gender']
 cat_features = ['Race',	'Occupation',	'GP']
-num_features = ['Age',	'Height',	'Weight',	'Temperature',	'Urination']
+num_features = ['Age',	'Height', 'Weight', 'Temperature', 'Urination']
+
+# Feature selection
+num_features.remove('Urination')
+num_features.remove('Temperature')
+cat_features.remove('GP')
+cat_features.remove('Occupation')
+binary_features.remove('TCep')
 
 target = 'Diabetes'
 
@@ -85,18 +92,6 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
         df.loc[idx3,'Polydipsia'] = 1
         #df.loc[idx,]
         return df
-
-    #preprocessing functions
-    """def fix_height(self, x, threshold=100):
-
-        #col = x.columns[0]
-        mask = x['Height'] < threshold
-        x.loc[mask, ['Height']] = x.loc[mask, ['Height']].mul(100)
-        return x
-
-    def fix_formating(self, x):
-    
-        return x.replace({'yes':1, 'Yes': 1, 'Positive':1, 'no':0, 'No':0, 'Negative':0, 'Male':1,'Female':0})"""
     
     def transform(self, X, y=None, threshold_BMI=30, threshold_Polydipsia= 2.5):
         X = self._BMI(X, threshold=threshold_BMI)
@@ -109,6 +104,23 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
 
 class Preprocessing(BaseEstimator, TransformerMixin):
 
+    """
+    Preprocessing class which converts meters to centimeters and binary answers to 1 and 0.
+ 
+    Attributes:
+        BaseEstimator: Base class for all estimators in scikit-learn
+        TransformerMixin: Mixin class for all transformers in scikit-learn.
+     ----------------
+     Methods:
+        fit(self, X, y=None): Fit transformer by checking X. 
+        _fix_height(self, x, threshold=100): Converts height given in centimeters to meters 
+        _fix_formating(self, x): Converts binary answers to 1 and 0
+        transform(self, X, y=None, threshold_Height=100): Using the forward function to set X 
+        set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator: Set output to pandas dataframe
+
+    """
+
+
     def __init__(self):
         super().__init__()
 
@@ -117,20 +129,20 @@ class Preprocessing(BaseEstimator, TransformerMixin):
         return self
 
     # preprocessing functions
-    def fix_height(self, x, threshold=100):
+    def _fix_height(self, x, threshold=100):
 
         #col = x.columns[0]
         mask = x['Height'] < threshold
         x.loc[mask, ['Height']] = x.loc[mask, ['Height']].mul(100)
         return x
 
-    def fix_formating(self, x):
+    def _fix_formating(self, x):
     
         return x.replace({'yes':1, 'Yes': 1, 'Positive':1, 'no':0, 'No':0, 'Negative':0, 'Male':1,'Female':0})
 
     def transform(self, X, y=None, threshold_Height=100):
-        X = self.fix_height(X, threshold=threshold_Height)
-        X = self.fix_formating(X)
+        X = self._fix_height(X, threshold=threshold_Height)
+        X = self._fix_formating(X)
         return X
    
     
@@ -216,21 +228,6 @@ class Outliers(BaseEstimator, TransformerMixin):
         method which enables pass through of column names, preserving them in the final transformed data frame
         """
         return self.columns_
-    
-
-
-#preprocessing functions
-def fix_height(x, threshold=100):
-    """ Converts height in meters to centimeters, if height is less than threshold (default = 100)"""
-    col = x.columns[0]
-    mask = x[col] < threshold
-    x.loc[mask, [col]] = x.loc[mask, [col]].mul(100)
-    return x
-
-def fix_formating(x):
-    """ Converts binary features to 0-1 encoding"""
-    return x.replace({'yes':1, 'Yes': 1, 'Positive':1, 'no':0, 'No':0, 'Negative':0, 'Male':1,'Female':0})
-
 
 # Parametric preprocessor where we impute with domain knowledge
 preprocessor_parametric = ColumnTransformer(
@@ -284,7 +281,7 @@ preprocessor = Pipeline(
     steps=[
         ('Custom impute', CustomTransformer()),
         ('Preprocessing', Preprocessing()),
-        # ('Add columns', AddBMI()),
+        ('Add columns', AddBMI()),
         ("preprocessor parametric", preprocessor_parametric), 
         ("preprocessor general", preprocessor_general), 
         ]
