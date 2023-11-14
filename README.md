@@ -44,7 +44,7 @@ If however you want to install dependencies directly, please use the following c
 ```bash
 pip install -r requirements.txt
 ```
-## Evironment in conda:
+## Environment in conda:
 ```bash
 conda env create -f environment.yml
 ```
