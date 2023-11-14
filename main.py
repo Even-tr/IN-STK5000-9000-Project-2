@@ -92,7 +92,7 @@ if __name__ == "__main__":
         figfolder = './figs/'
 
     try:
-        theta = float(sys.argv[4]) # destination folder for figures
+        theta = float(sys.argv[4]) # theta used in anynoymzation (only used for printing)
     except IndexError:
         theta = 1
 
