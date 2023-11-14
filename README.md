@@ -1,7 +1,7 @@
 ### Prerequisites 
 We provide several different ways to install the required packages:
 
-### Virtual environments
+## Virtual environments
 We recommend using virtual environments, and made a simple scripts which creates and install the required packages. This guide is made for Unix based systems.
 For windows, consider using WSL, or consult the documentation: https://docs.python.org/3/library/venv.html
 
