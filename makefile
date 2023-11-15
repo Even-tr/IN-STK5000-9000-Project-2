@@ -3,7 +3,7 @@ INFILE ?= diabetes.csv
 OUTFILE ?= anon.csv
 THETA ?= 0.95
 N_SAMPLES ?= 100
-ANON_SEED ?= -1 # default value means true randomization
+ANON_SEED ?= 1984 # default value means true randomization
 FIGFOLDER ?= ./figs/
 VENV_NAME ?=IN-STK5000
 
@@ -26,7 +26,7 @@ run:
 
 # Anonymized Analysis with specified infile and bootstrap samples
 anonymized_run: anonymize
-	python ./main.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/
+	python ./main.py $(OUTFILE) $(N_SAMPLES) ./anonymized_figs/ $(THETA)
 
 # Anonymizes the data
 anonymize:

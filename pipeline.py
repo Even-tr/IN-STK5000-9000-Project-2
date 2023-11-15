@@ -107,10 +107,10 @@ class CustomTransformer(BaseEstimator, TransformerMixin):
     def set_output(self, *, transform) -> BaseEstimator:
         return super().set_output(transform=transform)
 
-class Preprocessing(BaseEstimator, TransformerMixin):
+class UniformFormatting(BaseEstimator, TransformerMixin):
 
     """
-    Preprocessing class which converts meters to centimeters and binary answers to 1 and 0.
+    UniformFormatting class which converts meters to centimeters and binary answers to 1 and 0.
  
     Attributes:
         BaseEstimator: Base class for all estimators in scikit-learn
@@ -154,36 +154,6 @@ class Preprocessing(BaseEstimator, TransformerMixin):
     def set_output(self, *, transform: Literal['default', 'pandas'] | None = None) -> BaseEstimator:
         return super().set_output(transform=transform)
         
-
-class AddBMI(BaseEstimator, TransformerMixin):
-    """
-    Custom Transformer class which adds BMI to the data frame
-
-    Attributes:
-        BaseEstimator: Base class for all estimators in scikit-learn
-        TransformerMixin: Mixin class for all transformers in scikit-learn.
-     ----------------
-    Methods:
-        fit(self, X, y=None): Fit transformer by checking X. 
-        transform(self, X, y=None): Using the forward function to set X 
-        set_output(self, *, transform) -> BaseEstimator: Set output to pandas dataframe
-
-    """
-    
-    def __init__(self):
-        super().__init__()
-
-    def fit(self, X, y=None):
-        """Expected method by the pipeline API"""
-        return self
-
-    def transform(self, X, y=None):
-        # Add BMI to the data frame by using the BMI function
-        X['BMI'] = BMI(X['Weight'], X['Height'])
-        return X
-    
-    def set_output(self, *, transform) -> BaseEstimator:
-        return super().set_output(transform=transform)
 
 class Outliers(BaseEstimator, TransformerMixin):
     """
@@ -234,39 +204,23 @@ class Outliers(BaseEstimator, TransformerMixin):
         """
         return self.columns_
 
-# Parametric preprocessor where we impute with domain knowledge
-preprocessor_parametric = ColumnTransformer(
-    transformers=[
-        # ('fix height', FunctionTransformer(fix_height), ['Height']),
-    ],
-    verbose_feature_names_out= False, # Keeps the same column name for future processing
-    remainder='passthrough'         # Doesent drop untransformed columns
-).set_output(transform='pandas')    # Keep data frame format
-
 binary_transformer = Pipeline(
     steps=[
-        #('Fix formating', FunctionTransformer(fix_formating)),
         ("imputer", SimpleImputer(strategy="constant", fill_value=0)),
-        # ('randomize', FunctionTransformer(randomize)), # privacy has been moved to a separate pipeline
-        # ("selector", SelectKBest(k=5)),
     ]
 )
 
 cat_transformer = Pipeline(
     steps=[
         ("encoder", OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=0.1, sparse=False)),
-        # Unsure how to introduce privacy,
-        # ("selector", SelectKBest(k=5)),
     ]
 )
 
 num_transformer = Pipeline(
     steps=[
-        # Differential privacy here
-        # Outliers Here
-            ('Outliers', Outliers(num_features)), 
-            ("imputer", SimpleImputer(strategy="mean")), 
-            ("scaler", StandardScaler())]
+        ('Outliers', Outliers(num_features)), 
+        ("imputer", SimpleImputer(strategy="median")), 
+        ("scaler", StandardScaler())]
 )
 
 
@@ -284,10 +238,8 @@ preprocessor_general = ColumnTransformer(
 
 preprocessor = Pipeline(
     steps=[
-        ('Custom impute', CustomTransformer()),
-        ('Preprocessing', Preprocessing()),
-        ('Add columns', AddBMI()),
-        ("preprocessor parametric", preprocessor_parametric), 
+        ('Uniform formatting', UniformFormatting()),
+        ('Custom impute', CustomTransformer()), 
         ("preprocessor general", preprocessor_general), 
         ]
 )
