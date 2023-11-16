@@ -213,6 +213,7 @@ cat_transformer = Pipeline(
 num_transformer = Pipeline(
     steps=[
         ('Outliers', Outliers(num_features)), 
+        # We are aware that we should impute with median, but we kept mean imputing to allow for a better comparison with project 1.
         ("imputer", SimpleImputer(strategy="mean")), 
         ("scaler", StandardScaler())]
 )
