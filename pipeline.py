@@ -213,7 +213,7 @@ cat_transformer = Pipeline(
 num_transformer = Pipeline(
     steps=[
         ('Outliers', Outliers(num_features)), 
-        ("imputer", SimpleImputer(strategy="median")), 
+        ("imputer", SimpleImputer(strategy="mean")), 
         ("scaler", StandardScaler())]
 )
 
