@@ -3,7 +3,7 @@ INFILE ?= diabetes.csv
 OUTFILE ?= anon.csv
 THETA ?= 0.95
 N_SAMPLES ?= 100
-ANON_SEED ?= 1984 # default value means true randomization
+ANON_SEED ?= 1984 # -1 means true randomization
 FIGFOLDER ?= ./figs/
 VENV_NAME ?=IN-STK5000
 
