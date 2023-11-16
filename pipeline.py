@@ -29,12 +29,6 @@ binary_features.remove('TCep')
 
 target = 'Diabetes'
 
-# Removing features that will not be included in the analysis
-num_features.remove('Urination')
-cat_features.remove('GP')
-cat_features.remove('Occupation')
-binary_features.remove('TCep')
-
 def BMI(weight, height):
     """
     Calculates BMI from weight in kg and height in cm
