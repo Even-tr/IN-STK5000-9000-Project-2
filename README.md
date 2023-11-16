@@ -1,3 +1,5 @@
+# IN-STK5000-9000-Project-2
+
 ### Prerequisites 
 We provide several different ways to install the required packages:
 
@@ -113,4 +115,4 @@ The first argument is the dataset which is analyzed. The second is the number of
 privacyPipe.py <infile> <outfile> <theta> <seed>
 ```
 The first argument is the path to the data set to be anonymized. The second is the path to the new data set which is created. The third argument specifies the probability of answering truthfully (theta) - the higher the theta the less anonymization. The final argument is the seed used for anonymization. If this is unspecified, a truly random (and therefore non-reproducible) data set is generated.
-# IN-STK5000-9000-Project-2
+
