@@ -113,28 +113,4 @@ The first argument is the dataset which is analyzed. The second is the number of
 privacyPipe.py <infile> <outfile> <theta> <seed>
 ```
 The first argument is the path to the data set to be anonymized. The second is the path to the new data set which is created. The third argument specifies the probability of answering truthfully (theta) - the higher the theta the less anonymization. The final argument is the seed used for anonymization. If this is unspecified, a truly random (and therefore non-reproducible) data set is generated.
-
-# LENKER SOM SLETTES VED INNLEVERING 
-https://docs.google.com/presentation/d/1U_PAywkxoO0AGcN5XDDShKzrxjGgmvw63qKXIF6WFFY/edit?usp=sharing
-
-## Liten todo som slettes v innlevering 
-## hva som skal gjøres i koden nå: 
-### cleaning: 
-~~- Normalisation~~
- ~~- convert binary and categorical features to lower case
- ~~-convert binary features to ints
-- M -> cm 
-### delete duplicates 
-### One hot encoding -> other categori
-- outliers pipileine
-~~missing data in i pipeline
-~~feature selection : legg til kode for -remove-features
-
-~~legge til privacy: mynt og kron på categorical, laplace på numeriske. EGET SEED FOR PRIVACY. alfa/ theta experimenter (som forelesning 16 okt). 
-~~Cross validation for Alfa
-
-~~Metrics: acc, prec, rec, f1 (si noe om privacy også 
-
-~~bootstrapping eller cross-v: rapportering på range
-
 # IN-STK5000-9000-Project-2
